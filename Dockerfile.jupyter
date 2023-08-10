@@ -1,0 +1,11 @@
+FROM jupyter/datascience-notebook:2023-08-07
+
+# Update packages
+RUN apt-get update && apt-get upgrade -y
+
+# Upgrade pip
+RUN pip install --upgrade pip
+
+# Install requirements
+COPY requirements.txt /requirements.txt
+RUN pip install -r /requirements.txt

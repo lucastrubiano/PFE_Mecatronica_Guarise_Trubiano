@@ -230,7 +230,7 @@ pip-selfcheck.json
 *.xml
 *.zip
 *.jpg
-data/*
+data
 
 ### venv ###
 # Virtualenv

@@ -1,0 +1,14 @@
+[tool.poetry]
+name = "emotion-detection"
+version = "0.1.0"
+description = "First try of an MVP for the PFE"
+authors = ["Renzo Guarise, Lucas Turbiano"]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

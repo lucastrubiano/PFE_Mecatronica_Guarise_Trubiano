@@ -227,7 +227,6 @@ pip-selfcheck.json
 *.sdf
 *.tax2010
 *.vcf
-*.xml
 *.zip
 *.jpg
 data

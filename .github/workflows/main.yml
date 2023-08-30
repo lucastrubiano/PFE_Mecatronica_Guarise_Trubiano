@@ -33,14 +33,22 @@ jobs:
           allowed=("images" "models" "src" ".env" ".gitignore" "main.py" "README.md" "requirements.txt")
           
           # Remove all files and directories except allowed ones
+          removed=""
           for entry in *; do
             if [[ ! " ${allowed[@]} " =~ " $entry " ]]; then
               rm -rf "$entry"
+              removed="$removed $entry"
             fi
           done
           
-          git add -A
-          git commit -m "Remove unnecessary files and directories"
+          if [[ ! -z "$removed" ]]; then
+            echo "Removed files and directories:$removed"
+            git add -A
+            git commit -m "Remove unnecessary files and directories"
+            git push origin HEAD:${{ github.base_ref }}
+          else
+            echo "No files or directories to remove"
+          fi
 
       - name: Push changes to pull request branch
         run: git push origin HEAD:${{ github.base_ref }}

@@ -19,6 +19,9 @@ jobs:
           git config user.email "lucas.trubiano@gmail.com"
           git config user.name "lucastrubiano"
 
+      - name: Checkout base branch
+        run: git checkout ${{ github.base_ref }}
+
       - name: Preserve allowed files and directories
         run: |
           # List of allowed files and directories
@@ -34,3 +37,6 @@ jobs:
           git add -A
           git commit -m "Remove unnecessary files and directories"
           git push
+
+      - name: Push changes to pull request branch
+        run: git push origin HEAD:${{ github.base_ref }}

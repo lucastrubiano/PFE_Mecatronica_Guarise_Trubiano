@@ -1,0 +1,31 @@
+name: Ignore Directory in Pull Requests
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+jobs:
+  ignore_directory:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Preserve allowed files and directories
+        run: |
+          # List of allowed files and directories
+          allowed=("images" "models" "src" ".env" ".gitignore" "main.py" "README.md" "requirements.txt")
+          
+          # Remove all files and directories except allowed ones
+          for entry in *; do
+            if [[ ! " ${allowed[@]} " =~ " $entry " ]]; then
+              rm -rf "$entry"
+            fi
+          done
+          
+          git add -A
+          git commit -m "Remove unnecessary files and directories"
+          git push

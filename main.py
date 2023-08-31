@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from src import train, test, real_time, process_images
+from src import train, test, real_time, process_images, landmarks_model
 
 # Create the argument parser
 parser = argparse.ArgumentParser(
@@ -50,7 +50,7 @@ part = args.part
 stages = args.stages
 
 # Check if the command is valid
-if command not in ["train", "test", "real_time", "process_images"]:
+if command not in ["train", "test", "real_time", "process_images", "landmarks"]:
     print("Invalid command. It must be train, test or real_time.")
     sys.exit(1)
 
@@ -81,5 +81,6 @@ elif command == "real_time":
     obj = real_time.RealTime()
 elif command == "process_images":
     obj = process_images.ProcessImages()
-
+elif command == "landmarks":
+    obj = landmarks_model.LandmarksModel()
 obj.run()

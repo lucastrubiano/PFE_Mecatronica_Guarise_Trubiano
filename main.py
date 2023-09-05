@@ -5,8 +5,8 @@ It will be used to run the different programs to train, test and use the ML mode
 The commands are the following:
     - python main.py train [face|eyes|mouth] [stages]
     - python main.py test [face|eyes|mouth]
-    - python main.py use [face|eyes|mouth]
-    - python main.py process
+    - python main.py real_time [face|eyes|mouth]
+    - python main.py process_images
 """
 
 import sys
@@ -17,7 +17,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from src import train, test, real_time, process_images
+from src import train, test, real_time, process_images, landmarks_model
 
 # Create the argument parser
 parser = argparse.ArgumentParser(
@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(
 )
 
 # Add the arguments
-parser.add_argument("command", help="The command to run. It can be train, test or use.")
+parser.add_argument("command", help="The command to run. It can be train, test, real_time or process_images.")
 parser.add_argument(
     "part",
     nargs="?",
@@ -50,15 +50,15 @@ part = args.part
 stages = args.stages
 
 # Check if the command is valid
-if command not in ["train", "test", "use", "process"]:
-    print("Invalid command. It must be train, test or use.")
+if command not in ["train", "test", "real_time", "process_images", "landmarks"]:
+    print("Invalid command. It must be train, test or real_time.")
     sys.exit(1)
 
 # Check if the part is valid
 if part not in ["face", "eyes", "mouth"] and command in ["train", "test"]:
     print("Invalid part. It must be face, eyes or mouth.")
     sys.exit(1)
-elif part not in ["face", "eyes", "mouth", None] and command == "use":
+elif part not in ["face", "eyes", "mouth", None] and command == "real_time":
     print(
         "Invalid part. It must be face, eyes or mouth. Or it can be empty to use all the parts."
     )
@@ -77,9 +77,10 @@ if command == "train":
     obj = train.Train(part, stages)
 elif command == "test":
     obj = test.Test(part)
-elif command == "use":
+elif command == "real_time":
     obj = real_time.RealTime()
-elif command == "process":
+elif command == "process_images":
     obj = process_images.ProcessImages()
-
+elif command == "landmarks":
+    obj = landmarks_model.LandmarksModel()
 obj.run()

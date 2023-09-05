@@ -20,11 +20,8 @@ El proyecto consiste en el desarrollo de un sistema de reconocimiento facial par
 │       └── pos
 ├── models
 │   ├── haarcascade_face_default.xml
-│   ├── haarcascade_face.xml
 │   ├── haarcascade_eye_default.xml
-│   ├── haarcascade_eye.xml
-│   ├── haarcascade_mouth_default.xml
-│   └── haarcascade_mouth.xml
+│   └── haarcascade_mouth_default.xml
 ├── src
 │   ├── train.py
 │   ├── test.py

@@ -1,4 +1,5 @@
 opencv-python
 numpy
 python-dotenv
-face_recognition
+# face_recognition
+dlib

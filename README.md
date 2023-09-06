@@ -3,6 +3,17 @@ Repositorio para almacenar el código del PFE de la carrera de Ingeniería en Me
 
 El proyecto consiste en el desarrollo de un sistema de reconocimiento facial para detectar cansancio o distracciones en la conducción.
 
+
+## Arquitectura del proyecto
+
+El proyecto se divide en 3 subsistemas que se ejecutan en cascada. Los mismos son:
+1. **FacialFeaturesExtractionSystem (FFES)**: es el encargado de hacer un preprocesamiento de la imagen y detectar la cara del conductor junto con sus rasgos faciales (ojos y boca) y puntos de referencia.
+2. **Fatigue Detection System (FDS)**: es el encargado de detectar si el conductor se encuentra cansado o distraído. Para ello, se analizan los puntos de referencia de la cara y las features extraídas en el paso anterior.
+3. **Alert System (AS)**: en base a los resultados obtenidos en el paso anterior, se crea un modelo de cuando emitir una alerta en función del tiempo y periodicidad de los eventos registrados por el modelo anterior.
+
+<!-- Agregar imagen docs/arquitectura.png -->
+[![Arquitectura](docs/arquitectura.png)](docs/arquitectura.png)
+
 ## Estructura del repositorio
 
 ```bash
@@ -29,12 +40,14 @@ El proyecto consiste en el desarrollo de un sistema de reconocimiento facial par
 │   ├── process_images.py
 │   ├── real_time.py
 │   └── utils.py
+├── docs (imagenes, informes, etc.)
 ├── .env
 ├── .gitignore
 ├── main.py
 ├── README.md
 └── requirements.txt
 ```
+
 
 ## Create virtual environment
 

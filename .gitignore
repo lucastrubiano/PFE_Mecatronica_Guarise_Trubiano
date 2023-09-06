@@ -268,5 +268,5 @@ pip-selfcheck.json
 
 OLD
 
-*.jpg
-*.png
+images/*.jpg
+images/*.png

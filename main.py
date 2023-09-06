@@ -14,10 +14,11 @@ import argparse
 
 # Load environment variables
 from dotenv import load_dotenv
+from OLD import landmarks_model
 
 load_dotenv()
 
-from src import train, test, real_time, process_images, landmarks_model
+from src import train, test, real_time, process_images
 
 # Create the argument parser
 parser = argparse.ArgumentParser(

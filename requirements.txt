@@ -3,3 +3,6 @@ numpy
 python-dotenv
 # face_recognition
 dlib
+
+scipy
+imutils

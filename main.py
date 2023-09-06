@@ -5,7 +5,7 @@ It will be used to run the different programs to train, test and use the ML mode
 The commands are the following:
     - python main.py train [face|eyes|mouth] [stages]
     - python main.py test [face|eyes|mouth]
-    - python main.py real_time [face|eyes|mouth]
+    - python main.py real_time # [face|eyes|mouth]
     - python main.py process_images
 """
 

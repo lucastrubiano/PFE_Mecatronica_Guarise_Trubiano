@@ -217,7 +217,6 @@ pip-selfcheck.json
 
 ### Data ###
 *.csv
-*.dat
 *.efx
 *.gbr
 *.key

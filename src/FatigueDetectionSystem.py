@@ -2,6 +2,8 @@ from scipy.spatial import distance as dist
 
 from config import EAR_THRESHOLD, MAR_THRESHOLD
 
+# Save ear and mar values for each frame, to make some alalysis
+log_file = "./logs/log_ear_mar.csv"
 
 class FatigueDetectionSystem:
     def __init__(self) -> None:
@@ -53,6 +55,10 @@ class FatigueDetectionSystem:
         ear = self.closed_eyes_model(feautres_vector)
 
         mar = self.open_mouth_model(feautres_vector)
+
+        # Save ear and mar values for each frame, to make some alalysis
+        with open(log_file, "a") as f:
+            f.write(str(ear) + ";" + str(mar) + "\n")
 
         fatigue_prediction = self.fatigue_predictor_model(ear, mar)
 

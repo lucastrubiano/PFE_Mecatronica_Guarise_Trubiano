@@ -14,7 +14,6 @@ import argparse
 
 # Load environment variables
 from dotenv import load_dotenv
-from OLD import landmarks_model
 
 load_dotenv()
 
@@ -82,6 +81,4 @@ elif command == "real_time":
     obj = real_time.RealTime()
 elif command == "process_images":
     obj = process_images.ProcessImages()
-elif command == "landmarks":
-    obj = landmarks_model.LandmarksModel()
 obj.run()

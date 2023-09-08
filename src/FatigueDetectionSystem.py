@@ -37,13 +37,13 @@ class FatigueDetectionSystem:
         """
         Get Average Eye Aspect Ratio
         """
-        return self.avg_ear[0]
+        return self.avg_ear
 
     def get_avg_mar(self) -> float:
         """
         Get Average Mouth Aspect Ratio
         """
-        return self.avg_mar[0]
+        return self.avg_mar
 
     def run(self, feautres_vector) -> None:
         """
@@ -63,7 +63,7 @@ class FatigueDetectionSystem:
         Closed Eyes Model
         """
 
-        self.avg_ear = 0 * len(feautres_vector)
+        self.avg_ear = 0
 
         for feature in feautres_vector:
             left_eye = feature[42:48]
@@ -72,7 +72,7 @@ class FatigueDetectionSystem:
             left_ear = self.__eye_aspect_ratio(left_eye)
             right_ear = self.__eye_aspect_ratio(right_eye)
 
-            self.avg_ear.append((left_ear + right_ear) / 2.0)
+            self.avg_ear = (left_ear + right_ear) / 2.0
 
         return self.avg_ear
 
@@ -81,14 +81,14 @@ class FatigueDetectionSystem:
         Open Mouth Model
         """
 
-        self.avg_mar = 0 * len(feautres_vector)
+        self.avg_mar = 0
 
         for feature in feautres_vector:
             mouth = feature[48:68]
 
             mar = self.__mouth_aspect_ratio(mouth)
 
-            self.avg_mar.append(mar)
+            self.avg_mar = mar
 
         return self.avg_mar
 
@@ -97,10 +97,9 @@ class FatigueDetectionSystem:
         Fatigue Predictor Model
         """
 
-        fatigue_prediction = 0 * len(ear)
-
-        for i in range(len(ear)):
-            if ear[i] < EAR_THRESHOLD and mar[i] > MAR_THRESHOLD:
-                fatigue_prediction[i] = 1
+        if ear < EAR_THRESHOLD and mar > MAR_THRESHOLD:
+            fatigue_prediction = 1
+        else:
+            fatigue_prediction = 0
 
         return fatigue_prediction

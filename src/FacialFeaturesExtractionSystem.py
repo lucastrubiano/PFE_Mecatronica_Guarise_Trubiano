@@ -46,7 +46,10 @@ class FacialFeaturesExtractionSystem:
         faces_vector = self.detector(frame)
 
         # choose the first face
-        face = faces_vector[0]
+        if faces_vector:
+            face = faces_vector[0]
+        else:
+            return []
 
         # other possible options:
         # choose the biggest face

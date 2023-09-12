@@ -53,6 +53,16 @@ class RealTime:
                 2,
             )
 
+            cv2.putText(
+                frame,
+                "Fatigue: {:.2f}".format(fatigue_prediction),
+                (10, 60),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 0, 255),
+                2,
+            )
+
             alert_result = alert_system.run(fatigue_prediction)
 
             # Print fatigue detected text on frame

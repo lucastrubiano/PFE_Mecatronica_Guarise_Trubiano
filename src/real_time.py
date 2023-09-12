@@ -1,11 +1,14 @@
 import cv2
 
+from config import DIR_LOGS
 from .FacialFeaturesExtractionSystem import FacialFeaturesExtractionSystem
 from .FatigueDetectionSystem import FatigueDetectionSystem
 from .AlertSystem import AlertSystem
+from os import makedirs
 
 class RealTime:
 
+    makedirs(DIR_LOGS, exist_ok=True)
     @staticmethod
     def run():
         # Initialize the 3 subsystems

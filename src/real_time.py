@@ -4,6 +4,12 @@ from .FacialFeaturesExtractionSystem import FacialFeaturesExtractionSystem
 from .FatigueDetectionSystem import FatigueDetectionSystem
 from .AlertSystem import AlertSystem
 
+from datetime import datetime
+import os
+
+# Save ear and mar values for each frame, to make some alalysis
+log_file = "./logs/log_ear_mar.csv"
+
 class RealTime:
 
     @staticmethod
@@ -30,10 +36,12 @@ class RealTime:
                     cv2.circle(frame, (x, y), 1, (0, 0, 255), -1)
 
             fatigue_prediction = fatigue_detection_system.run(landmarks)
+            avg_ear = fatigue_detection_system.get_avg_ear()
+            avg_mar = fatigue_detection_system.get_avg_mar()
 
             cv2.putText(
                 frame,
-                "EAR: {:.2f}".format(fatigue_detection_system.get_avg_ear()),
+                "EAR: {:.2f}".format(avg_ear),
                 (300, 30),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.7,
@@ -42,13 +50,37 @@ class RealTime:
             )
             cv2.putText(
                 frame,
-                "MAR: {:.2f}".format(fatigue_detection_system.get_avg_mar()),
+                "MAR: {:.2f}".format(avg_mar),
                 (300, 60),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.7,
                 (0, 255, 0),
                 2,
             )
+
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+            # COLS: timestamp;path_img;ear;mar
+            path_img = "./frames/boca_cerrado/"
+
+            # mkdir
+            if not os.path.exists(path_img):
+                os.makedirs(path_img)
+
+            full_path_img = "{}frame_{}.jpg".format(path_img, timestamp)
+
+            # Save frame to disk
+            cv2.imwrite(
+                full_path_img,
+                frame,
+            )
+
+            # Save ear and mar values for each frame, to make some alalysis
+            with open(log_file, "a") as f:
+                f.write(
+                    "{};{};{};{}\n".format(
+                        timestamp, full_path_img, avg_ear, avg_mar
+                    )
+                )
 
             cv2.putText(
                 frame,

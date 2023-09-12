@@ -6,3 +6,6 @@ dlib
 
 scipy
 imutils
+
+pandas
+matplotlib

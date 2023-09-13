@@ -11,6 +11,9 @@ import os
 
 # Save ear and mar values for each frame, to make some alalysis
 log_file = "./logs/log_ear_mar.csv"
+SAVE_LOGS = False
+CATEGORY = 'hablando'
+# bostezo, ojos_cerrados, ojos_abiertos, boca_abierta, hablando, bostezando
 
 class RealTime:
 
@@ -61,29 +64,31 @@ class RealTime:
                 2,
             )
 
-            timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
-            # COLS: timestamp;path_img;ear;mar
-            path_img = "./frames/boca_cerrado/"
+            if SAVE_LOGS:
+                
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+                # COLS: timestamp;path_img;ear;mar
+                path_img = f"./frames/{CATEGORY}/"
 
-            # mkdir
-            if not os.path.exists(path_img):
-                os.makedirs(path_img)
+                # mkdir
+                if not os.path.exists(path_img):
+                    os.makedirs(path_img)
 
-            full_path_img = "{}frame_{}.jpg".format(path_img, timestamp)
+                full_path_img = "{}frame_{}.jpg".format(path_img, timestamp)
 
-            # Save frame to disk
-            cv2.imwrite(
-                full_path_img,
-                frame,
-            )
-
-            # Save ear and mar values for each frame, to make some alalysis
-            with open(log_file, "a") as f:
-                f.write(
-                    "{};{};{};{}\n".format(
-                        timestamp, full_path_img, avg_ear, avg_mar
-                    )
+                # Save frame to disk
+                cv2.imwrite(
+                    full_path_img,
+                    frame,
                 )
+
+                # Save ear and mar values for each frame, to make some alalysis
+                with open(log_file, "a") as f:
+                    f.write(
+                        "{};{};{};{}\n".format(
+                            timestamp, full_path_img, avg_ear, avg_mar
+                        )
+                    )
 
             cv2.putText(
                 frame,

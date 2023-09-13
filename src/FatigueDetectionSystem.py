@@ -151,7 +151,7 @@ class FatigueDetectionSystem:
         # If the person is not blinking, don't predict fatigue
         # If the person is not talking, don't predict fatigue
         # If the person is not blinking and not talking, predict fatigue
-        # If the person open mouth for more than 1 second, predict fatigue, otherwise don't predict fatigue
-        # If the person closed eyes for more than 1 second, predict fatigue, otherwise don't predict fatigue
+        # * If the person open mouth for more than 1 second, predict fatigue, otherwise don't predict fatigue
+        # * If the person closed eyes for more than 1 second, predict fatigue, otherwise don't predict fatigue
 
         return 0

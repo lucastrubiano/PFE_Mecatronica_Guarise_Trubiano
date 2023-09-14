@@ -10,9 +10,10 @@ from datetime import datetime
 import os
 
 # Save ear and mar values for each frame, to make some alalysis
-log_file = "./logs/log_ear_mar.csv"
-SAVE_LOGS = False
-CATEGORY = 'hablando'
+log_file = "./logs/{}.csv"
+SAVE_LOGS = True
+CATEGORY = 'no fatiga'
+PARAMS_TO_LOG = "log_all"
 # bostezo, ojos_cerrados, ojos_abiertos, boca_abierta, hablando, bostezando
 
 class RealTime:
@@ -83,11 +84,11 @@ class RealTime:
                 )
 
                 # Save ear and mar values for each frame, to make some alalysis
-                with open(log_file, "a") as f:
+                with open(log_file.format(PARAMS_TO_LOG), "a") as f:
+
+                    row_to_write = ";".join(map(str,[timestamp, full_path_img, avg_ear, avg_mar,list(*landmarks)])) 
                     f.write(
-                        "{};{};{};{}\n".format(
-                            timestamp, full_path_img, avg_ear, avg_mar
-                        )
+                       row_to_write + "\n"
                     )
 
             cv2.putText(

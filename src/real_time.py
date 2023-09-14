@@ -12,7 +12,7 @@ import os
 # Save ear and mar values for each frame, to make some alalysis
 log_file = "./logs/log_ear_mar.csv"
 SAVE_LOGS = True
-CATEGORY = 'boca_abierta_ojos_abiertos'
+CATEGORY = 'hablando'
 # bostezo, ojos_cerrados, ojos_abiertos, boca_abierta, hablando, bostezando
 
 class RealTime:

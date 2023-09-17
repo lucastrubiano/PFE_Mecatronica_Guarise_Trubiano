@@ -1,9 +1,12 @@
 from scipy.spatial import distance as dist
 
-from config import EAR_THRESHOLD, MAR_THRESHOLD
+from config import EAR_THRESHOLD, MAR_THRESHOLD, MODEL_PATH
 
 from datetime import datetime
 
+from tensorflow.keras.models import load_model
+
+import numpy as np
 
 class FatigueDetectionSystem:
     def __init__(self) -> None:
@@ -20,6 +23,8 @@ class FatigueDetectionSystem:
 
         self.fatigue_predictions_history = []
         self.MAX_PREDICTIONS_HISTORY = 10
+
+        self.model = load_model(MODEL_PATH)
 
     def __eye_aspect_ratio(self, eye):
         """
@@ -153,5 +158,4 @@ class FatigueDetectionSystem:
         # If the person is not blinking and not talking, predict fatigue
         # * If the person open mouth for more than 1 second, predict fatigue, otherwise don't predict fatigue
         # * If the person closed eyes for more than 1 second, predict fatigue, otherwise don't predict fatigue
-
-        return 0
+        return 1 if self.model.predict(np.array([ear, mar]).reshape(1, 2)) > 0.7 else 0

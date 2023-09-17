@@ -11,7 +11,7 @@ import os
 
 # Save ear and mar values for each frame, to make some alalysis
 log_file = "./logs/{}.csv"
-SAVE_LOGS = True
+SAVE_LOGS = False
 CATEGORY = 'no fatiga'
 PARAMS_TO_LOG = "log_all"
 # bostezo, ojos_cerrados, ojos_abiertos, boca_abierta, hablando, bostezando

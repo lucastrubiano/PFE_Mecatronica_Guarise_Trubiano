@@ -158,4 +158,4 @@ class FatigueDetectionSystem:
         # If the person is not blinking and not talking, predict fatigue
         # * If the person open mouth for more than 1 second, predict fatigue, otherwise don't predict fatigue
         # * If the person closed eyes for more than 1 second, predict fatigue, otherwise don't predict fatigue
-        return 1 if self.model.predict(np.array([ear, mar]).reshape(1, 2)) > 0.7 else 0
+        return 1 if self.model.predict(np.array([ear, mar]).reshape(1, 2)) > 0.6 else 0

@@ -10,7 +10,6 @@ from datetime import datetime
 import os
 
 # Save ear and mar values for each frame, to make some alalysis
-log_file = "./logs/{}.csv"
 SAVE_LOGS = False
 CATEGORY = 'no fatiga'
 PARAMS_TO_LOG = "log_all"
@@ -84,7 +83,7 @@ class RealTime:
                 )
 
                 # Save ear and mar values for each frame, to make some alalysis
-                with open(log_file.format(PARAMS_TO_LOG), "a") as f:
+                with open(LOG_FILE.format(PARAMS_TO_LOG), "a") as f:
 
                     row_to_write = ";".join(map(str,[timestamp, full_path_img, avg_ear, avg_mar,list(*landmarks)])) 
                     f.write(

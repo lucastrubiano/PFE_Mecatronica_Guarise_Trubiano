@@ -1,6 +1,6 @@
 import cv2
 
-from config import DIR_LOGS
+from config import DIR_LOGS, LOG_FILE
 from .FacialFeaturesExtractionSystem import FacialFeaturesExtractionSystem
 from .FatigueDetectionSystem import FatigueDetectionSystem
 from .AlertSystem import AlertSystem

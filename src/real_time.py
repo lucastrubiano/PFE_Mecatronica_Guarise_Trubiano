@@ -65,7 +65,7 @@ class RealTime:
                 2,
             )
 
-            if SAVE_LOGS & avg_ear != 0 and avg_mar != 0:
+            if SAVE_LOGS and avg_ear != 0 and avg_mar != 0:
 
                 # Press "space" to save fatigue detected frame
                 if cv2.waitKey(1) & 0xFF == ord(" "):

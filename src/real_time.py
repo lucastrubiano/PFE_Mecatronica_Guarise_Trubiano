@@ -10,8 +10,9 @@ from datetime import datetime
 import os
 
 # Save ear and mar values for each frame, to make some alalysis
-SAVE_LOGS = False
-CATEGORY = 'no fatiga'
+log_file = "./logs/{}.csv"
+SAVE_LOGS = True
+CATEGORY = 'train'
 PARAMS_TO_LOG = "log_all"
 # bostezo, ojos_cerrados, ojos_abiertos, boca_abierta, hablando, bostezando
 
@@ -64,7 +65,13 @@ class RealTime:
                 2,
             )
 
-            if SAVE_LOGS:
+            if SAVE_LOGS & avg_ear != 0 and avg_mar != 0:
+
+                # Press "space" to save fatigue detected frame
+                if cv2.waitKey(1) & 0xFF == ord(" "):
+                    fatigue_prediction = 1
+                else:
+                    fatigue_prediction = 0
                 
                 timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
                 # COLS: timestamp;path_img;ear;mar
@@ -83,9 +90,9 @@ class RealTime:
                 )
 
                 # Save ear and mar values for each frame, to make some alalysis
-                with open(LOG_FILE.format(PARAMS_TO_LOG), "a") as f:
+                with open(log_file.format(PARAMS_TO_LOG), "a+") as f:
 
-                    row_to_write = ";".join(map(str,[timestamp, full_path_img, avg_ear, avg_mar,list(*landmarks)])) 
+                    row_to_write = ";".join(map(str,[timestamp, full_path_img, avg_ear, avg_mar,list(*landmarks), fatigue_prediction])) 
                     f.write(
                        row_to_write + "\n"
                     )

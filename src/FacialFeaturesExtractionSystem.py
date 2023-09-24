@@ -1,81 +1,114 @@
 import cv2
-import dlib
-from imutils import face_utils
-from config import LANDMARKS_MODEL
-
+import mediapipe as mp
+import numpy as np
+from config import (
+    EYES_LMS_NUMS,
+    LEFT_IRIS_NUM,
+    RIGHT_IRIS_NUM
+)
 
 class FacialFeaturesExtractionSystem:
     def __init__(self) -> None:
         """
-        Initialize dlib's face detector (HOG-based) and facial landmark predictor
+        Initialize mediapipe's face detector and facial landmark predictor
         """
-        self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor(LANDMARKS_MODEL)
+        self.detector = mp.solutions.face_mesh.FaceMesh(static_image_mode=False,
+                                               min_detection_confidence=0.5,
+                                               min_tracking_confidence=0.5,
+                                               refine_landmarks=True)
 
     def run(self, frame) -> list:
         """
         Run Facial Features Extraction Model
         """
 
-        processed_frame = self.pre_processing(frame)
+        processed_frame, frame_size = self.pre_processing(frame)
 
-        faces_vector = self.face_detection(processed_frame)
+        landmarks = self.face_detection(processed_frame)
 
-        landmarks = self.landmarks_predictor(processed_frame, faces_vector)
+        return landmarks,frame_size
+    
+    def _get_main_face(self, multiple_face_landmakrs: np.array) -> np.array:
+        """
+        Get the main face from multiple faces detected
 
-        return landmarks
+        Args:
+            multiple_face_landmakrs (np.array): Multiple Face landmarks
+
+        Returns:
+            np.array: Main Face landmarks
+        """
+        surface = 0
+        for face_lamdmarks in multiple_face_landmakrs:
+            landmarks = [np.array([point.x, point.y, point.z]) \
+                            for point in face_lamdmarks.landmark]
+
+            landmarks = np.array(landmarks)
+
+            dx = landmarks[:, 0].max() - landmarks[:, 0].min()
+            dy = landmarks[:, 1].max() - landmarks[:, 1].min()
+            new_surface = dx * dy
+            if new_surface > surface:
+                main_face = landmarks
+        
+        return main_face
 
     def pre_processing(self, frame) -> None:
         """
         Pre-processing frame
         """
 
-        # maybe resize frame?
 
-        # convert frame to grayscale
+        # start the tick counter for computing the processing time for each frame
+        e1 = cv2.getTickCount()
+
+        # transform the BGR frame in grayscale
         processed_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-        return processed_frame
+        # get the frame size
+        frame_size = frame.shape[1], frame.shape[0]
 
-    def face_detection(self, frame) -> list:
+        # apply a bilateral filter to lower noise but keep frame details. create a 3D matrix from gray image to give it to the model
+        processed_frame = np.expand_dims(cv2.bilateralFilter(processed_frame, 5, 10, 10), axis=2)
+        processed_frame = np.concatenate([processed_frame, processed_frame, processed_frame], axis=2)
+
+        return processed_frame, frame_size
+
+    def face_detection(self, frame: np.array) -> np.array:
         """
         Detect faces in frame
         """
-
-        # detect faces in the grayscale frame
-        faces_vector = self.detector(frame)
-
-        # choose the first face
-        if faces_vector:
-            face = faces_vector[0]
-        else:
-            return []
-
-        # other possible options:
-        # choose the biggest face
-        # choose the closest face
-        # choose the face with the highest confidence
-        # choose the most centered face
-
-        return [face]
-
-    def landmarks_predictor(self, frame, faces_vector) -> list:
-        """
-        Predict landmarks in frame
-        """
-
         # initialize landmarks vector
-        landmarks = []
+        mian_face = np.array
+        # find the faces using the face mesh model
+        multiple_face_landmakrs = self.detector.process(frame).multi_face_landmarks
+        if multiple_face_landmakrs:  # process the frame only if at least a face is found
+            # getting face landmarks and then take only the bounding box of the biggest face
+            mian_face = self._get_main_face(multiple_face_landmakrs)
 
-        # loop over the face detections
-        for face in faces_vector:
-            # determine the facial landmarks for the face region
-            shape = self.predictor(frame, face)
+        return mian_face
+    
+    def show_eye_keypoints(self, color_frame, landmarks, frame_size):
+        """
+        Shows eyes keypoints found in the face, drawing red circles in their position in the frame/image
 
-            # convert facial landmark (x, y)-coordinates to a NumPy array
-            shape = face_utils.shape_to_np(shape)
+        Parameters
+        ----------
+        color_frame: numpy array
+            Frame/image in which the eyes keypoints are found
+        landmarks: landmarks: numpy array
+            List of 478 mediapipe keypoints of the face
+        """
 
-            # append landmarks to vector
-            landmarks.append(shape)
+        self.keypoints = landmarks
 
-        return landmarks
+        cv2.circle(color_frame, (landmarks[LEFT_IRIS_NUM, :2] * frame_size).astype(np.uint32),
+                   3, (255, 255, 255), cv2.FILLED)
+        cv2.circle(color_frame, (landmarks[RIGHT_IRIS_NUM, :2] * frame_size).astype(np.uint32),
+                   3, (255, 255, 255), cv2.FILLED)
+
+        for n in EYES_LMS_NUMS:
+            x = int(landmarks[n, 0] * frame_size[0])
+            y = int(landmarks[n, 1] * frame_size[1])
+            cv2.circle(color_frame, (x, y), 1, (0, 0, 255), -1)
+        return

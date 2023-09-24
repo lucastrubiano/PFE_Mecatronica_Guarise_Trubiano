@@ -1,10 +1,10 @@
 from scipy.spatial import distance as dist
 
-from config import EAR_THRESHOLD, MAR_THRESHOLD, MODEL_PATH
+
+from config import EAR_THRESHOLD, MAR_THRESHOLD, FRAMES_PER_SECONDS, PERCLOS_THRESHOLD
 
 from datetime import datetime
 
-from tensorflow.keras.models import load_model
 
 import numpy as np
 
@@ -22,9 +22,9 @@ class FatigueDetectionSystem:
         self.fatigue_prediction = 0
 
         self.fatigue_predictions_history = []
+        self.ear_history = []
         self.MAX_PREDICTIONS_HISTORY = 10
 
-        self.model = load_model(MODEL_PATH)
 
     def __eye_aspect_ratio(self, eye):
         """
@@ -48,6 +48,31 @@ class FatigueDetectionSystem:
         mar = mouth_height / mouth_width
 
         return mar
+    
+    def __perclos(self, ear: float) -> float:
+        """
+        Calculate the PERCLOS which is the eye's closure duration/ percentage of eye closure.
+        It is to say the duration of the closure of the eyes in a given duration.
+
+        Args:
+            ear (float): Eye Aspect Ratio
+        """
+        eye_state = 0
+        perclos = 0
+        if ear < EAR_THRESHOLD:
+            #If the ear is less than EAR_THRESHOLD then it is considered that the eye is closed
+            eye_state = 1
+        self.ear_history.append(eye_state)
+
+        if self.frame >= FRAMES_PER_SECONDS:
+            # PERCLOS is the duration of the closure of the eyes. In our list of ear_history we storage the closure of the eyes
+            # during a determinated amount of frames wich represents the durations of 1 minute
+            perclos = np.mean(self.ear_history)
+            self.ear_history.pop(0)
+        
+        return perclos
+
+
 
     def get_avg_ear(self) -> float:
         """
@@ -69,14 +94,14 @@ class FatigueDetectionSystem:
         # Calculate time difference between frames
         t1 = datetime.now()
         dt = t1 - self.t
-        no_frame = self.frame + 1
+        self.frame += 1
 
         ear = self.eyes_features_extraction(landmarks)
         mar = self.mouth_features_extraction(landmarks)
-        fatigue_prediction = self.fatigue_predictor_model(t1, dt, no_frame, ear, mar)
+        fatigue_prediction = self.fatigue_predictor_model(t1, dt, self.frame, ear, mar)
 
         # Save fatigue prediction to history
-        self.update_history(t1, dt, no_frame, ear, mar, fatigue_prediction)
+        self.update_history(t1, dt, self.frame, ear, mar, fatigue_prediction)
 
         return fatigue_prediction
 
@@ -158,4 +183,4 @@ class FatigueDetectionSystem:
         # If the person is not blinking and not talking, predict fatigue
         # * If the person open mouth for more than 1 second, predict fatigue, otherwise don't predict fatigue
         # * If the person closed eyes for more than 1 second, predict fatigue, otherwise don't predict fatigue
-        return 1 if self.model.predict(np.array([ear, mar]).reshape(1, 2)) > 0.6 else 0
+        return 1 if  self.__perclos(ear)> PERCLOS_THRESHOLD else 0

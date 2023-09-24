@@ -10,3 +10,5 @@ imutils
 pandas
 matplotlib
 tensorflow
+
+beepy

@@ -1,51 +1,45 @@
 from time import time
 from config import CONSECUTIVE_FRAMES_THRESHOLD, TIME_THRESHOLD
 
+import threading
+import beepy
 
-class AlertSystem:
+class AlertSystem(threading.Thread):
     def __init__(self) -> None:
         """
         Initialize Alert System
         """
+        threading.Thread.__init__(self)
 
         # initialize run time
         self.t = 0
         self.last_t = time()
 
         # initialize counter
-        self.consecutive_frames = 0
+        # self.consecutive_frames = 0
 
         # last 10 fatigue predictions
-        self.fatigue_prediction = []
+        # self.fatigue_prediction = []
 
         # alert state
         self.alert_state = False
+
+        self.playing_sound = False
 
     def run(self, fatigue_prediction) -> None:
         """
         Run Alert System
         """
 
-        # update run time
-        self.t = time() - self.last_t
-        self.last_t = time()
-
-        # update fatigue prediction vector
-        self.__update_history_faigue_prediction(fatigue_prediction)
-
-        # update consecutive frames
-        self.__update_consecutive_frames(fatigue_prediction)
-
-        # run alert model
-        alert_result = self.alert_model(
-            self.t, self.consecutive_frames, self.fatigue_prediction
-        )
-
-        # trigger alert
-        if alert_result:
+        if fatigue_prediction > 0.8:
+            # make a beep sound in parallel
             self.alert()
+            alert = 1
 
-        return alert_result
+        else:
+            alert = 0
+
+        return alert
 
     def __update_consecutive_frames(self, fatigue_prediction) -> None:
         """
@@ -85,5 +79,8 @@ class AlertSystem:
         Possible in a future will be implemented a sms or email alert.
         """
 
-        self.alert_state = True
-        print("Alert")
+        if not self.playing_sound and self.last_t + 5 < time():
+            self.last_t = time()
+            self.playing_sound = True
+            beepy.beep(1)
+            self.playing_sound = False

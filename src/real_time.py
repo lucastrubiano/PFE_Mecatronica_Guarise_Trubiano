@@ -11,7 +11,7 @@ import os
 
 # Save ear and mar values for each frame, to make some alalysis
 log_file = "./logs/{}.csv"
-SAVE_LOGS = True
+SAVE_LOGS = False
 CATEGORY = 'train'
 PARAMS_TO_LOG = "log_all"
 # bostezo, ojos_cerrados, ojos_abiertos, boca_abierta, hablando, bostezando
@@ -109,17 +109,6 @@ class RealTime:
 
             alert_result = alert_system.run(fatigue_prediction)
 
-            # Print fatigue detected text on frame
-            if alert_result:
-                cv2.putText(
-                    frame,
-                    "Fatigue Detected",
-                    (10, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    (0, 0, 255),
-                    2,
-                )
 
             # Show frame
             cv2.imshow("Fatigue Detector", frame)

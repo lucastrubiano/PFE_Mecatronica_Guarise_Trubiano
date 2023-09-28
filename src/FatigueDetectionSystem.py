@@ -1,7 +1,7 @@
 from scipy.spatial import distance as dist
 
 
-from config import EAR_THRESHOLD, MAR_THRESHOLD, FRAMES_PER_SECONDS, PERCLOS_THRESHOLD
+from config import EAR_THRESHOLD, MAR_THRESHOLD, FRAMES_PER_SECONDS, PERCLOS_THRESHOLD, EYES_LMS_NUMS
 
 from datetime import datetime
 
@@ -26,16 +26,23 @@ class FatigueDetectionSystem:
         self.MAX_PREDICTIONS_HISTORY = 10
 
 
-    def __eye_aspect_ratio(self, eye):
+    @staticmethod
+    def _calc_EAR_eye(eye_pts):
         """
-        Eye Aspect Ratio
+        Computer the EAR score for a single eyes given it's keypoints
+        :param eye_pts: numpy array of shape (6,2) containing the keypoints of an eye
+        :return: ear_eye
+            EAR of the eye
         """
-        A = dist.euclidean(eye[1], eye[5])
-        B = dist.euclidean(eye[2], eye[4])
-        C = dist.euclidean(eye[0], eye[3])
+        A = dist.euclidean(eye_pts[2], eye_pts[3])
+        B = dist.euclidean(eye_pts[4], eye_pts[5])
+        C = dist.euclidean(eye_pts[0], eye_pts[1])
 
         ear = (A + B) / (2.0 * C)
-
+        '''
+        EAR is computed as the mean of two measures of eye opening (see mediapipe face keypoints for the eye)
+        divided by the eye lenght
+        '''
         return ear
 
     def __mouth_aspect_ratio(self, mouth):
@@ -48,6 +55,43 @@ class FatigueDetectionSystem:
         mar = mouth_height / mouth_width
 
         return mar
+    
+    def eyes_features_extraction(self,landmarks):
+        """
+        Computes the average eye aperture rate of the face
+
+        Parameters
+        ----------
+        landmarks: landmarks: numpy array
+            List of 478 mediapipe keypoints of the face
+
+        Returns
+        -------- 
+        ear_score: float
+            EAR average score between the two eyes
+            The EAR or Eye Aspect Ratio is computed as the eye opennes divided by the eye lenght
+            Each eye has his scores and the two scores are averaged
+        """
+
+        # numpy array for storing the keypoints positions of the left and right eyes
+        eye_pts_l = np.zeros(shape=(6, 2))
+        eye_pts_r = eye_pts_l.copy()
+
+        # get the face mesh keypoints
+        for i in range(len(EYES_LMS_NUMS)//2):
+            # array of x,y coordinates for the left eye reference point
+            eye_pts_l[i] = landmarks[EYES_LMS_NUMS[i], :2]
+            # array of x,y coordinates for the right eye reference point
+            eye_pts_r[i] = landmarks[EYES_LMS_NUMS[i+6], :2]
+
+        ear_left = self._calc_EAR_eye(eye_pts_l)  # computing the left eye EAR score
+        ear_right = self._calc_EAR_eye(eye_pts_r)  # computing the right eye EAR score
+
+        # computing the average EAR score
+        ear_avg = (ear_left + ear_right) / 2
+
+        self.avg_ear = ear_avg
+        return ear_avg
     
     def __perclos(self, ear: float) -> float:
         """
@@ -97,7 +141,8 @@ class FatigueDetectionSystem:
         self.frame += 1
 
         ear = self.eyes_features_extraction(landmarks)
-        mar = self.mouth_features_extraction(landmarks)
+        #mar = self.mouth_features_extraction(landmarks)
+        mar = np.array([])
         fatigue_prediction = self.fatigue_predictor_model(t1, dt, self.frame, ear, mar)
 
         # Save fatigue prediction to history
@@ -130,23 +175,23 @@ class FatigueDetectionSystem:
         self.t = t1
         self.frame = no_frame
 
-    def eyes_features_extraction(self, landmarks) -> float:
-        """
-        Closed Eyes Model
-        """
+    # def eyes_features_extraction(self, landmarks) -> float:
+    #     """
+    #     Closed Eyes Model
+    #     """
 
-        self.avg_ear = 0
+    #     self.avg_ear = 0
 
-        for feature in landmarks:
-            left_eye = feature[42:48]
-            right_eye = feature[36:42]
+    #     for feature in landmarks:
+    #         left_eye = feature[42:48]
+    #         right_eye = feature[36:42]
 
-            left_ear = self.__eye_aspect_ratio(left_eye)
-            right_ear = self.__eye_aspect_ratio(right_eye)
+    #         left_ear = self.__eye_aspect_ratio(left_eye)
+    #         right_ear = self.__eye_aspect_ratio(right_eye)
 
-            self.avg_ear = (left_ear + right_ear) / 2.0
+    #         self.avg_ear = (left_ear + right_ear) / 2.0
 
-        return self.avg_ear
+    #     return self.avg_ear
 
     def mouth_features_extraction(self, landmarks) -> float:
         """

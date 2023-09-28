@@ -3,10 +3,14 @@ import mediapipe as mp
 import numpy as np
 from config import (
     EYES_LMS_NUMS,
+    OUTTER_LIP_LMS_NUMS,
+    INNER_LIP_LMS_NUMS,
     LEFT_IRIS_NUM,
-    RIGHT_IRIS_NUM
+    RIGHT_IRIS_NUM,
 )
-
+mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
+mp_face_mesh = mp.solutions.face_mesh
 class FacialFeaturesExtractionSystem:
     def __init__(self) -> None:
         """
@@ -25,7 +29,7 @@ class FacialFeaturesExtractionSystem:
         processed_frame, frame_size = self.pre_processing(frame)
 
         landmarks = self.face_detection(processed_frame)
-
+        
         return landmarks,frame_size
     
     def _get_main_face(self, multiple_face_landmakrs: np.array) -> np.array:
@@ -79,7 +83,7 @@ class FacialFeaturesExtractionSystem:
         Detect faces in frame
         """
         # initialize landmarks vector
-        mian_face = np.array
+        mian_face = np.array([])
         # find the faces using the face mesh model
         multiple_face_landmakrs = self.detector.process(frame).multi_face_landmarks
         if multiple_face_landmakrs:  # process the frame only if at least a face is found
@@ -88,7 +92,7 @@ class FacialFeaturesExtractionSystem:
 
         return mian_face
     
-    def show_eye_keypoints(self, color_frame, landmarks, frame_size):
+    def show_eye_keypoints(self, color_frame, landmarks, frame_size, numerate_dots = False, plot_iris = True ,plot_eyes = True, plot_inner_lips = True, plot_outter_lips = True):
         """
         Shows eyes keypoints found in the face, drawing red circles in their position in the frame/image
 
@@ -102,13 +106,39 @@ class FacialFeaturesExtractionSystem:
 
         self.keypoints = landmarks
 
-        cv2.circle(color_frame, (landmarks[LEFT_IRIS_NUM, :2] * frame_size).astype(np.uint32),
-                   3, (255, 255, 255), cv2.FILLED)
-        cv2.circle(color_frame, (landmarks[RIGHT_IRIS_NUM, :2] * frame_size).astype(np.uint32),
-                   3, (255, 255, 255), cv2.FILLED)
-
-        for n in EYES_LMS_NUMS:
-            x = int(landmarks[n, 0] * frame_size[0])
-            y = int(landmarks[n, 1] * frame_size[1])
-            cv2.circle(color_frame, (x, y), 1, (0, 0, 255), -1)
+        
+        if landmarks.shape[0]:
+            if plot_iris:
+                cv2.circle(color_frame, (landmarks[LEFT_IRIS_NUM, :2] * frame_size).astype(np.uint32),
+                    3, (255, 255, 255), cv2.FILLED)
+                cv2.circle(color_frame, (landmarks[RIGHT_IRIS_NUM, :2] * frame_size).astype(np.uint32),
+                        3, (255, 255, 255), cv2.FILLED)
+            # mp_drawing.draw_landmarks(
+            # image=color_frame,
+            # landmark_list=landmarks[0],
+            # connections=mp_face_mesh.FACEMESH_LIPS,
+            # landmark_drawing_spec=None,
+            # connection_drawing_spec=mp_drawing_styles
+            # .get_default_face_mesh_tesselation_style())
+            dots_to_plot = []
+            if plot_eyes:
+                dots_to_plot.extend(EYES_LMS_NUMS)
+            if plot_inner_lips:
+                dots_to_plot.extend(INNER_LIP_LMS_NUMS)
+            if plot_outter_lips:
+                dots_to_plot.extend(OUTTER_LIP_LMS_NUMS)
+            for n in dots_to_plot:
+                x = int(landmarks[n, 0] * frame_size[0])
+                y = int(landmarks[n, 1] * frame_size[1])
+                cv2.circle(color_frame, (x, y), 1, (0, 0, 255), -1)
+                if numerate_dots:
+                    cv2.putText(
+                        color_frame,
+                        f'{n}',
+                        (x, y),
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.3,
+                        (0, 255, 0),
+                        1,
+                    )
         return

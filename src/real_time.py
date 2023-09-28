@@ -14,6 +14,7 @@ log_file = "./logs/{}.csv"
 SAVE_LOGS = False
 CATEGORY = 'train'
 PARAMS_TO_LOG = "log_all"
+PRINT_DOTS = True
 # bostezo, ojos_cerrados, ojos_abiertos, boca_abierta, hablando, bostezando
 
 class RealTime:
@@ -44,9 +45,6 @@ class RealTime:
                 print(
                     "OpenCV optimization could not be set to True, the script may be slower than expected")
 
-        
-        
-
         # Run the 3 subsystems in cascade
         while True:
             ret, frame = video_frame.read()
@@ -58,33 +56,32 @@ class RealTime:
                 frame = cv2.flip(frame, 2)
 
             landmarks,frame_size = self.facial_features_extraction.run(frame)
+            if PRINT_DOTS:
+                self.facial_features_extraction.show_eye_keypoints(
+                    color_frame=frame, landmarks=landmarks, frame_size=frame_size)
 
-            self.facial_features_extraction.show_eye_keypoints(
-                color_frame=frame, landmarks=landmarks, frame_size=frame_size)
-            print(landmarks)
+            fatigue_prediction = self.fatigue_detection_system.run(landmarks)
+            avg_ear = self.fatigue_detection_system.get_avg_ear()
+            avg_mar = self.fatigue_detection_system.get_avg_mar()
 
-            # fatigue_prediction = self.fatigue_detection_system.run(landmarks)
-            # avg_ear = self.fatigue_detection_system.get_avg_ear()
-            # avg_mar = self.fatigue_detection_system.get_avg_mar()
-
-            # cv2.putText(
-            #     frame,
-            #     "EAR: {:.2f}".format(avg_ear),
-            #     (300, 30),
-            #     cv2.FONT_HERSHEY_SIMPLEX,
-            #     0.7,
-            #     (0, 255, 0),
-            #     2,
-            # )
-            # cv2.putText(
-            #     frame,
-            #     "MAR: {:.2f}".format(avg_mar),
-            #     (300, 60),
-            #     cv2.FONT_HERSHEY_SIMPLEX,
-            #     0.7,
-            #     (0, 255, 0),
-            #     2,
-            # )
+            cv2.putText(
+                frame,
+                "EAR: {:.2f}".format(avg_ear),
+                (300, 30),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 0),
+                2,
+            )
+            cv2.putText(
+                frame,
+                "MAR: {:.2f}".format(avg_mar),
+                (300, 60),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 0),
+                2,
+            )
 
             # if SAVE_LOGS and avg_ear != 0 and avg_mar != 0:
 

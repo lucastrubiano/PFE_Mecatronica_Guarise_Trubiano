@@ -63,6 +63,8 @@ class RealTime:
             fatigue_prediction = self.fatigue_detection_system.run(landmarks)
             avg_ear = self.fatigue_detection_system.get_avg_ear()
             avg_mar = self.fatigue_detection_system.get_avg_mar()
+            perclos = self.fatigue_detection_system.get_perclos()
+            pom = self.fatigue_detection_system.get_pom()
 
             cv2.putText(
                 frame,
@@ -82,7 +84,24 @@ class RealTime:
                 (0, 255, 0),
                 2,
             )
-
+            cv2.putText(
+                frame,
+                "PERCLOS: {:.2f}".format(perclos),
+                (300, 90),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 0),
+                2,
+            )
+            cv2.putText(
+                frame,
+                "POM: {:.2f}".format(pom),
+                (300, 120),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                (0, 255, 0),
+                2,
+            )
             # if SAVE_LOGS and avg_ear != 0 and avg_mar != 0:
 
             #     # Press "space" to save fatigue detected frame

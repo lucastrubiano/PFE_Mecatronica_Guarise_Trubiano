@@ -1,7 +1,17 @@
 from scipy.spatial import distance as dist
 
 
-from config import EAR_THRESHOLD, MAR_THRESHOLD, FRAMES_PER_SECONDS, PERCLOS_THRESHOLD, EYES_LMS_NUMS
+from config import(
+     EAR_THRESHOLD, 
+     MAR_THRESHOLD, 
+     FRAMES_PER_SECONDS, 
+     PERCLOS_THRESHOLD, 
+     EYES_LMS_NUMS, 
+     LEFT_EYE_LMS_NUMS, 
+     RIGHT_EYE_LMS_NUMS, 
+     CENTER_MOUTH_LMS_NUMS, 
+     BORDER_MOUTH_LMS_NUMS
+    )
 
 from datetime import datetime
 
@@ -23,11 +33,12 @@ class FatigueDetectionSystem:
 
         self.fatigue_predictions_history = []
         self.ear_history = []
+        self.mar_history = []
         self.MAX_PREDICTIONS_HISTORY = 10
 
 
     @staticmethod
-    def _calc_EAR_eye(eye_pts):
+    def _calc_ear_eye(eye_pts):
         """
         Computer the EAR score for a single eyes given it's keypoints
         :param eye_pts: numpy array of shape (6,2) containing the keypoints of an eye
@@ -45,12 +56,12 @@ class FatigueDetectionSystem:
         '''
         return ear
 
-    def __mouth_aspect_ratio(self, mouth):
+    def _mouth_aspect_ratio(self, center_mouth_coord, border_mouth_coord):
         """
         Mouth Aspect Ratio
         """
-        mouth_width = dist.euclidean(mouth[0], mouth[6])
-        mouth_height = dist.euclidean(mouth[14], mouth[18])
+        mouth_width = dist.euclidean(*border_mouth_coord)
+        mouth_height = dist.euclidean(*center_mouth_coord)
 
         mar = mouth_height / mouth_width
 
@@ -72,28 +83,13 @@ class FatigueDetectionSystem:
             The EAR or Eye Aspect Ratio is computed as the eye opennes divided by the eye lenght
             Each eye has his scores and the two scores are averaged
         """
-
-        # numpy array for storing the keypoints positions of the left and right eyes
-        eye_pts_l = np.zeros(shape=(6, 2))
-        eye_pts_r = eye_pts_l.copy()
-
-        # get the face mesh keypoints
-        for i in range(len(EYES_LMS_NUMS)//2):
-            # array of x,y coordinates for the left eye reference point
-            eye_pts_l[i] = landmarks[EYES_LMS_NUMS[i], :2]
-            # array of x,y coordinates for the right eye reference point
-            eye_pts_r[i] = landmarks[EYES_LMS_NUMS[i+6], :2]
-
-        ear_left = self._calc_EAR_eye(eye_pts_l)  # computing the left eye EAR score
-        ear_right = self._calc_EAR_eye(eye_pts_r)  # computing the right eye EAR score
+        ear_left = self._calc_ear_eye(landmarks[LEFT_EYE_LMS_NUMS, :2])  # computing the left eye EAR score
+        ear_right = self._calc_ear_eye(landmarks[RIGHT_EYE_LMS_NUMS, :2])  # computing the right eye EAR score
 
         # computing the average EAR score
-        ear_avg = (ear_left + ear_right) / 2
-
-        self.avg_ear = ear_avg
-        return ear_avg
+        return (ear_left + ear_right) / 2
     
-    def __perclos(self, ear: float) -> float:
+    def calc_perclos(self, ear: float) -> float:
         """
         Calculate the PERCLOS which is the eye's closure duration/ percentage of eye closure.
         It is to say the duration of the closure of the eyes in a given duration.
@@ -113,10 +109,45 @@ class FatigueDetectionSystem:
             # during a determinated amount of frames wich represents the durations of 1 minute
             perclos = np.mean(self.ear_history)
             self.ear_history.pop(0)
-        
+
         return perclos
+    
+    def calc_pom(self, mar:float) -> float:
+        """
+        Calculate the POM which is the mouth's opening duration/ percentage of mouth opening.
 
+        Args:
+            mar (float): Mouth Aspect Ratio
+        
+        Returns:
+            float: POM
+        """
+        mouth_state = 0
+        pom = 0
+        if mar > MAR_THRESHOLD:
+            #If the mar is more than MAR_THRESHOLD then it is considered that the mouth is opened
+            mouth_state = 1
+        self.mar_history.append(mouth_state)
 
+        if self.frame >= FRAMES_PER_SECONDS:
+            # POM is the duration of the opening of the mouth. In our list of mar_history we storage the opening of the mouth
+            # during a determinated amount of frames wich represents the durations of 1 minute
+            pom = np.mean(self.mar_history)
+            self.mar_history.pop(0)
+
+        return pom
+
+    def get_perclos(self):
+        """
+        Get PERCLOS
+        """
+        return self.perclos
+    
+    def get_pom(self):
+        """
+        Get PERCLOS
+        """
+        return self.pom
 
     def get_avg_ear(self) -> float:
         """
@@ -140,13 +171,14 @@ class FatigueDetectionSystem:
         dt = t1 - self.t
         self.frame += 1
 
-        ear = self.eyes_features_extraction(landmarks)
-        #mar = self.mouth_features_extraction(landmarks)
-        mar = np.array([])
-        fatigue_prediction = self.fatigue_predictor_model(t1, dt, self.frame, ear, mar)
-
+        self.avg_ear = self.eyes_features_extraction(landmarks)
+        self.avg_mar = self.mouth_features_extraction(landmarks)
+        self.perclos = self.calc_perclos(self.avg_ear)
+        self.pom = self.calc_pom(self.avg_mar)
+        #fatigue_prediction = self.fatigue_predictor_model(t1, dt, self.frame, self.avg_ear, self.avg_mar)
+        fatigue_prediction = 0
         # Save fatigue prediction to history
-        self.update_history(t1, dt, self.frame, ear, mar, fatigue_prediction)
+        self.update_history(t1, dt, self.frame, self.avg_ear, self.avg_mar, fatigue_prediction)
 
         return fatigue_prediction
 
@@ -197,17 +229,7 @@ class FatigueDetectionSystem:
         """
         Open Mouth Model
         """
-
-        self.avg_mar = 0
-
-        for feature in landmarks:
-            mouth = feature[48:68]
-
-            mar = self.__mouth_aspect_ratio(mouth)
-
-            self.avg_mar = mar
-
-        return self.avg_mar
+        return self._mouth_aspect_ratio(landmarks[CENTER_MOUTH_LMS_NUMS], landmarks[BORDER_MOUTH_LMS_NUMS])
 
     def fatigue_predictor_model(self, t1, dt, no_frame, ear, mar) -> float:
         """Fatigue Predictor Model. It returns a value between 0 and 1.
@@ -228,4 +250,4 @@ class FatigueDetectionSystem:
         # If the person is not blinking and not talking, predict fatigue
         # * If the person open mouth for more than 1 second, predict fatigue, otherwise don't predict fatigue
         # * If the person closed eyes for more than 1 second, predict fatigue, otherwise don't predict fatigue
-        return 1 if  self.__perclos(ear)> PERCLOS_THRESHOLD else 0
+        return 1 if  self.calc_perclos(ear)> PERCLOS_THRESHOLD else 0

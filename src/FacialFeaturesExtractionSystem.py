@@ -92,7 +92,7 @@ class FacialFeaturesExtractionSystem:
 
         return mian_face
     
-    def show_eye_keypoints(self, color_frame, landmarks, frame_size, numerate_dots = False, plot_iris = True ,plot_eyes = True, plot_inner_lips = True, plot_outter_lips = True):
+    def show_eye_keypoints(self, color_frame, landmarks, frame_size, numerate_dots = True, plot_iris = False ,plot_eyes = False, plot_inner_lips = True, plot_outter_lips = False):
         """
         Shows eyes keypoints found in the face, drawing red circles in their position in the frame/image
 

@@ -4,13 +4,17 @@ from scipy.spatial import distance as dist
 from config import(
      EAR_THRESHOLD, 
      MAR_THRESHOLD, 
-     FRAMES_PER_SECONDS, 
-     PERCLOS_THRESHOLD, 
-     EYES_LMS_NUMS, 
-     LEFT_EYE_LMS_NUMS, 
-     RIGHT_EYE_LMS_NUMS, 
-     CENTER_MOUTH_LMS_NUMS, 
-     BORDER_MOUTH_LMS_NUMS
+     CONSECUTIVE_SEC_PERCLOS_THRESHOLD,
+     CONSECUTIVE_SEC_POM_THRESHOLD,
+     CONSECUTIVE_SEC_POY_THRESHOLD,
+     PERCLOS_THRESHOLD,
+     EYES_LMS_NUMS,
+     YAWN_THRESHOLD,
+     LEFT_EYE_LMS_NUMS,
+     RIGHT_EYE_LMS_NUMS,
+     CENTER_MOUTH_LMS_NUMS,
+     BORDER_MOUTH_LMS_NUMS,
+     FPS
     )
 
 from datetime import datetime
@@ -30,10 +34,13 @@ class FatigueDetectionSystem:
         self.t = datetime.now()
         self.frame = 0
         self.fatigue_prediction = 0
+        self.yawn_state = False
+        self.last_yawn = 0
 
         self.fatigue_predictions_history = []
         self.ear_history = []
         self.mar_history = []
+        self.yawn_history = []
         self.MAX_PREDICTIONS_HISTORY = 10
 
 
@@ -83,11 +90,14 @@ class FatigueDetectionSystem:
             The EAR or Eye Aspect Ratio is computed as the eye opennes divided by the eye lenght
             Each eye has his scores and the two scores are averaged
         """
-        ear_left = self._calc_ear_eye(landmarks[LEFT_EYE_LMS_NUMS, :2])  # computing the left eye EAR score
-        ear_right = self._calc_ear_eye(landmarks[RIGHT_EYE_LMS_NUMS, :2])  # computing the right eye EAR score
+        if landmarks.shape[0]!=0:
+            ear_left = self._calc_ear_eye(landmarks[LEFT_EYE_LMS_NUMS, :2])  # computing the left eye EAR score
+            ear_right = self._calc_ear_eye(landmarks[RIGHT_EYE_LMS_NUMS, :2])  # computing the right eye EAR score
 
-        # computing the average EAR score
-        return (ear_left + ear_right) / 2
+            # computing the average EAR score
+            return (ear_left + ear_right) / 2
+        else:
+            return 0
     
     def calc_perclos(self, ear: float) -> float:
         """
@@ -104,7 +114,7 @@ class FatigueDetectionSystem:
             eye_state = 1
         self.ear_history.append(eye_state)
 
-        if self.frame >= FRAMES_PER_SECONDS:
+        if self.frame >= CONSECUTIVE_SEC_PERCLOS_THRESHOLD * FPS:
             # PERCLOS is the duration of the closure of the eyes. In our list of ear_history we storage the closure of the eyes
             # during a determinated amount of frames wich represents the durations of 1 minute
             perclos = np.mean(self.ear_history)
@@ -122,6 +132,7 @@ class FatigueDetectionSystem:
         Returns:
             float: POM
         """
+        
         mouth_state = 0
         pom = 0
         if mar > MAR_THRESHOLD:
@@ -129,7 +140,7 @@ class FatigueDetectionSystem:
             mouth_state = 1
         self.mar_history.append(mouth_state)
 
-        if self.frame >= FRAMES_PER_SECONDS:
+        if self.frame >= CONSECUTIVE_SEC_POM_THRESHOLD * FPS:
             # POM is the duration of the opening of the mouth. In our list of mar_history we storage the opening of the mouth
             # during a determinated amount of frames wich represents the durations of 1 minute
             pom = np.mean(self.mar_history)
@@ -160,6 +171,52 @@ class FatigueDetectionSystem:
         Get Average Mouth Aspect Ratio
         """
         return self.avg_mar
+    
+    def get_poy(self) -> float:
+        """
+        Get POY
+
+        Returns:
+            float: POY
+        """
+        return self.poy
+    
+    def is_yawn(self, pom: float) -> bool:
+        """
+        Update yawn history and return True if it is a yawn
+
+        Returns:
+            bool: If it is a yawn, True is returned
+        """
+        if pom > YAWN_THRESHOLD:
+            return True
+        else:
+            return False
+
+    def calc_poy(self, yawn_state: float, last_yawn: float, yawn_history: list, frame: int)-> float:
+        """
+        Calculate the POY which is the number of yawn during a given time
+
+        Args:
+            yawn_state (float): The current yawn state
+            last_yawn (float): The last yawn state
+
+        Returns:
+            float: POY
+        """
+
+        if yawn_state != last_yawn:
+            yawn_history.append((yawn_state,frame))
+
+        if len(yawn_history)>0:
+            
+            if (frame - yawn_history[-1][1]) >= CONSECUTIVE_SEC_POY_THRESHOLD * FPS:
+                yawn_history.pop(0)
+
+        poy = sum([i[0] for i in yawn_history])
+
+        return poy, yawn_history
+
 
     def run(self, landmarks) -> None:
         """
@@ -175,6 +232,9 @@ class FatigueDetectionSystem:
         self.avg_mar = self.mouth_features_extraction(landmarks)
         self.perclos = self.calc_perclos(self.avg_ear)
         self.pom = self.calc_pom(self.avg_mar)
+        self.yawn_state = self.is_yawn(self.pom)
+        self.poy, self.yawn_history = self.calc_poy(self.yawn_state, self.last_yawn, self.yawn_history, self.frame)
+        self.last_yawn = self.yawn_state
         #fatigue_prediction = self.fatigue_predictor_model(t1, dt, self.frame, self.avg_ear, self.avg_mar)
         fatigue_prediction = 0
         # Save fatigue prediction to history
@@ -229,7 +289,10 @@ class FatigueDetectionSystem:
         """
         Open Mouth Model
         """
-        return self._mouth_aspect_ratio(landmarks[CENTER_MOUTH_LMS_NUMS], landmarks[BORDER_MOUTH_LMS_NUMS])
+        if landmarks.shape[0]:
+            return self._mouth_aspect_ratio(landmarks[CENTER_MOUTH_LMS_NUMS], landmarks[BORDER_MOUTH_LMS_NUMS])
+        else:
+            return 0
 
     def fatigue_predictor_model(self, t1, dt, no_frame, ear, mar) -> float:
         """Fatigue Predictor Model. It returns a value between 0 and 1.

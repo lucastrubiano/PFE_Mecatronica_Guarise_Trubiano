@@ -1,13 +1,14 @@
 import cv2
 
-from config import DIR_LOGS, LOG_FILE
+from config import DIR_LOGS, LOG_FILE, CONSECUTIVE_FRAMES_FPS, FILE_FPS
 from .FacialFeaturesExtractionSystem import FacialFeaturesExtractionSystem
 from .FatigueDetectionSystem import FatigueDetectionSystem
 from .AlertSystem import AlertSystem
 from os import makedirs
+from math import floor
 
 from datetime import datetime
-import os
+import os, time
 
 # Save ear and mar values for each frame, to make some alalysis
 log_file = "./logs/{}.csv"
@@ -19,19 +20,49 @@ PRINT_DOTS = True
 
 class RealTime:
 
-    def __init__(self, camera: int = 0):
+    def __init__(self, camera: int = 0, calculate_fps: bool = False, print_landmarks: bool = True) -> None:
         """
         Initialize Real Time System
 
         Args:
-            camera (int, optional): Camera input. Defaults to 0.
+            - camera (int, optional): Camera input. Defaults to 0.
+            - calculate_fps (bool, optional): Calculate FPS. Defaults to False
+            - print_landmarks (bool, optional): Print the landmarks. Defaults to True.
         """
         makedirs(DIR_LOGS, exist_ok=True)
         self.facial_features_extraction = FacialFeaturesExtractionSystem()
         self.fatigue_detection_system = FatigueDetectionSystem()
         self.alert_system = AlertSystem()
         self.camera = camera
+        self.t0 = time.perf_counter()
+        self.counter = 0
+        self.calculate_fps = calculate_fps
+        self.print_landmarks = print_landmarks
+    
+    def calc_fps(self, t_now: float, t0: float, n_frame: int) -> float:
+        """
+        Calculate FPS
 
+        Args:
+            - t_now (float): Current time
+            - t0 (float): Initial time
+            - n_frame (int): Number of frames
+
+        Returns:
+            - float: FPS
+        """
+        div = (t_now - t0)
+
+        if div > 0 :
+            return n_frame / div
+        else:
+            return 0
+
+    def print_features(self, ) -> None:
+
+
+
+    
     def run(self):
 
         # Start video capture
@@ -47,6 +78,8 @@ class RealTime:
 
         # Run the 3 subsystems in cascade
         while True:
+            
+            # If there is not ret
             ret, frame = video_frame.read()
             if not ret:
                 break
@@ -54,101 +87,138 @@ class RealTime:
             # if the frame comes from webcam, flip it so it looks like a mirror.
             if self.camera == 0:
                 frame = cv2.flip(frame, 2)
-
+            
+            # Run facuial features extraction model
             landmarks,frame_size = self.facial_features_extraction.run(frame)
-            if PRINT_DOTS:
+
+            # Print landmarks
+            if  self.print_landmarks:
                 self.facial_features_extraction.show_eye_keypoints(
                     color_frame=frame, landmarks=landmarks, frame_size=frame_size)
+            
+            #Calculate FPS
+            t_now = time.perf_counter()
+            fps = self.calc_fps(t_now, self.t0,self.counter)
+            
+            #Calculate constant FPS
+            if self.calculate_fps:
 
-            fatigue_prediction = self.fatigue_detection_system.run(landmarks)
-            avg_ear = self.fatigue_detection_system.get_avg_ear()
-            avg_mar = self.fatigue_detection_system.get_avg_mar()
-            perclos = self.fatigue_detection_system.get_perclos()
-            pom = self.fatigue_detection_system.get_pom()
+                if self.counter > CONSECUTIVE_FRAMES_FPS:
+                    with open(FILE_FPS, 'w') as f:
+                        f.write(str(floor(fps)))
+                    break
+            else:
 
-            cv2.putText(
-                frame,
-                "EAR: {:.2f}".format(avg_ear),
-                (300, 30),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 255, 0),
-                2,
-            )
-            cv2.putText(
-                frame,
-                "MAR: {:.2f}".format(avg_mar),
-                (300, 60),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 255, 0),
-                2,
-            )
-            cv2.putText(
-                frame,
-                "PERCLOS: {:.2f}".format(perclos),
-                (300, 90),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 255, 0),
-                2,
-            )
-            cv2.putText(
-                frame,
-                "POM: {:.2f}".format(pom),
-                (300, 120),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                (0, 255, 0),
-                2,
-            )
-            # if SAVE_LOGS and avg_ear != 0 and avg_mar != 0:
+                fatigue_prediction = self.fatigue_detection_system.run(landmarks)
+                avg_ear = self.fatigue_detection_system.get_avg_ear()
+                avg_mar = self.fatigue_detection_system.get_avg_mar()
+                perclos = self.fatigue_detection_system.get_perclos()
+                pom = self.fatigue_detection_system.get_pom()
+                poy = self.fatigue_detection_system.get_poy()
 
-            #     # Press "space" to save fatigue detected frame
-            #     if cv2.waitKey(1) & 0xFF == ord(" "):
-            #         fatigue_prediction = 1
-            #     else:
-            #         fatigue_prediction = 0
-                
-            #     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
-            #     # COLS: timestamp;path_img;ear;mar
-            #     path_img = f"./frames/{CATEGORY}/"
+                cv2.putText(
+                    frame,
+                    "EAR: {:.2f}".format(avg_ear),
+                    (300, 30),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
+                cv2.putText(
+                    frame,
+                    "MAR: {:.2f}".format(avg_mar),
+                    (300, 60),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
+                cv2.putText(
+                    frame,
+                    "PERCLOS: {:.2f}".format(perclos),
+                    (300, 90),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
+                cv2.putText(
+                    frame,
+                    "POM: {:.2f}".format(pom),
+                    (300, 120),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
+                cv2.putText(
+                    frame,
+                    "POY: {:.2f}".format(poy),
+                    (300, 150),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
+                # if SAVE_LOGS and avg_ear != 0 and avg_mar != 0:
 
-            #     # mkdir
-            #     if not os.path.exists(path_img):
-            #         os.makedirs(path_img)
+                #     # Press "space" to save fatigue detected frame
+                #     if cv2.waitKey(1) & 0xFF == ord(" "):
+                #         fatigue_prediction = 1
+                #     else:
+                #         fatigue_prediction = 0
+                    
+                #     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+                #     # COLS: timestamp;path_img;ear;mar
+                #     path_img = f"./frames/{CATEGORY}/"
 
-            #     full_path_img = "{}frame_{}.jpg".format(path_img, timestamp)
+                #     # mkdir
+                #     if not os.path.exists(path_img):
+                #         os.makedirs(path_img)
 
-            #     # Save frame to disk
-            #     cv2.imwrite(
-            #         full_path_img,
-            #         frame,
-            #     )
+                #     full_path_img = "{}frame_{}.jpg".format(path_img, timestamp)
 
-            #     # Save ear and mar values for each frame, to make some alalysis
-            #     with open(log_file.format(PARAMS_TO_LOG), "a+") as f:
+                #     # Save frame to disk
+                #     cv2.imwrite(
+                #         full_path_img,
+                #         frame,
+                #     )
 
-            #         row_to_write = ";".join(map(str,[timestamp, full_path_img, avg_ear, avg_mar,list(*landmarks), fatigue_prediction])) 
-            #         f.write(
-            #            row_to_write + "\n"
-            #         )
+                #     # Save ear and mar values for each frame, to make some alalysis
+                #     with open(log_file.format(PARAMS_TO_LOG), "a+") as f:
 
-            # cv2.putText(
-            #     frame,
-            #     "Fatigue: {:.2f}".format(fatigue_prediction),
-            #     (10, 60),
-            #     cv2.FONT_HERSHEY_SIMPLEX,
-            #     0.7,
-            #     (0, 0, 255),
-            #     2,
-            # )
+                #         row_to_write = ";".join(map(str,[timestamp, full_path_img, avg_ear, avg_mar,list(*landmarks), fatigue_prediction])) 
+                #         f.write(
+                #            row_to_write + "\n"
+                #         )
 
-            # alert_result = self.alert_system.run(fatigue_prediction)
+                # cv2.putText(
+                #     frame,
+                #     "Fatigue: {:.2f}".format(fatigue_prediction),
+                #     (10, 60),
+                #     cv2.FONT_HERSHEY_SIMPLEX,
+                #     0.7,
+                #     (0, 0, 255),
+                #     2,
+                # )
+
+                # alert_result = self.alert_system.run(fatigue_prediction)
 
 
             # Show frame
+            cv2.putText(
+                    frame,
+                    "FPS: {:.2f}".format(fps),
+                    (300, 180),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
             cv2.imshow("Fatigue Detector", frame)
+
+            self.counter +=1
 
             # Press "q" to quit
             if cv2.waitKey(1) & 0xFF == ord("q"):

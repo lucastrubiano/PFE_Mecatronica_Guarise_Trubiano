@@ -104,10 +104,8 @@ class FacialFeaturesExtractionSystem:
             List of 478 mediapipe keypoints of the face
         """
 
-        self.keypoints = landmarks
-
         
-        if landmarks.shape[0]:
+        if landmarks.shape[0] != 0:
             if plot_iris:
                 cv2.circle(color_frame, (landmarks[LEFT_IRIS_NUM, :2] * frame_size).astype(np.uint32),
                     3, (255, 255, 255), cv2.FILLED)

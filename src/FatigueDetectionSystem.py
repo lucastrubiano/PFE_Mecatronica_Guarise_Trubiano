@@ -8,7 +8,7 @@ from config import(
      CONSECUTIVE_SEC_POM_THRESHOLD,
      CONSECUTIVE_SEC_POY_THRESHOLD,
      PERCLOS_THRESHOLD,
-     EYES_LMS_NUMS,
+     POY_THRESHOLD,
      YAWN_THRESHOLD,
      LEFT_EYE_LMS_NUMS,
      RIGHT_EYE_LMS_NUMS,
@@ -235,10 +235,7 @@ class FatigueDetectionSystem:
         self.yawn_state = self.is_yawn(self.pom)
         self.poy, self.yawn_history = self.calc_poy(self.yawn_state, self.last_yawn, self.yawn_history, self.frame)
         self.last_yawn = self.yawn_state
-        #fatigue_prediction = self.fatigue_predictor_model(t1, dt, self.frame, self.avg_ear, self.avg_mar)
-        fatigue_prediction = 0
-        # Save fatigue prediction to history
-        self.update_history(t1, dt, self.frame, self.avg_ear, self.avg_mar, fatigue_prediction)
+        fatigue_prediction = self.fatigue_predictor_model(self.perclos, self.poy)
 
         return fatigue_prediction
 
@@ -294,7 +291,7 @@ class FatigueDetectionSystem:
         else:
             return 0
 
-    def fatigue_predictor_model(self, t1, dt, no_frame, ear, mar) -> float:
+    def fatigue_predictor_model(self, perclos, poy) -> float:
         """Fatigue Predictor Model. It returns a value between 0 and 1.
         It uses a machine learning model to predict fatigue based on:
         - Time difference between frames
@@ -305,12 +302,11 @@ class FatigueDetectionSystem:
         """
 
         # Define some rules to start predicting fatigue
+        if perclos> PERCLOS_THRESHOLD:
+            return 1
+        
+        if  poy>= POY_THRESHOLD:
+            return 1
+        
+        return 0
 
-        # If the person is blinking, don't predict fatigue
-        # If the person is talking, don't predict fatigue
-        # If the person is not blinking, don't predict fatigue
-        # If the person is not talking, don't predict fatigue
-        # If the person is not blinking and not talking, predict fatigue
-        # * If the person open mouth for more than 1 second, predict fatigue, otherwise don't predict fatigue
-        # * If the person closed eyes for more than 1 second, predict fatigue, otherwise don't predict fatigue
-        return 1 if  self.calc_perclos(ear)> PERCLOS_THRESHOLD else 0

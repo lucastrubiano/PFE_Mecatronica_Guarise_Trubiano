@@ -58,11 +58,19 @@ class RealTime:
         else:
             return 0
 
-    def print_features(self, ) -> None:
+    def print_features(self, frame: list,features_to_print: list) -> None:
 
+        for feature in features_to_print:
+            cv2.putText(
+                    frame,
+                    "{}: {:.2f}".format(feature[0], feature[1]),
+                    feature[2],
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    feature[3],
+                    2,
+            )
 
-
-    
     def run(self):
 
         # Start video capture
@@ -116,51 +124,10 @@ class RealTime:
                 pom = self.fatigue_detection_system.get_pom()
                 poy = self.fatigue_detection_system.get_poy()
 
-                cv2.putText(
-                    frame,
-                    "EAR: {:.2f}".format(avg_ear),
-                    (300, 30),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    (0, 255, 0),
-                    2,
-                )
-                cv2.putText(
-                    frame,
-                    "MAR: {:.2f}".format(avg_mar),
-                    (300, 60),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    (0, 255, 0),
-                    2,
-                )
-                cv2.putText(
-                    frame,
-                    "PERCLOS: {:.2f}".format(perclos),
-                    (300, 90),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    (0, 255, 0),
-                    2,
-                )
-                cv2.putText(
-                    frame,
-                    "POM: {:.2f}".format(pom),
-                    (300, 120),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    (0, 255, 0),
-                    2,
-                )
-                cv2.putText(
-                    frame,
-                    "POY: {:.2f}".format(poy),
-                    (300, 150),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    (0, 255, 0),
-                    2,
-                )
+                features_to_print = [("EAR", avg_ear, (300, 30), (0, 255, 0)),("MAR", avg_mar, (300, 60), (0, 255, 0)),
+                                     ("PERCLOS", perclos, (300, 90), (0, 255, 0)),("POM", pom, (300,120), (0, 255, 0)),("POY", poy, (300,150), (0, 255, 0))]
+                
+                self.print_features(frame, features_to_print)
                 # if SAVE_LOGS and avg_ear != 0 and avg_mar != 0:
 
                 #     # Press "space" to save fatigue detected frame
@@ -193,29 +160,21 @@ class RealTime:
                 #            row_to_write + "\n"
                 #         )
 
-                # cv2.putText(
-                #     frame,
-                #     "Fatigue: {:.2f}".format(fatigue_prediction),
-                #     (10, 60),
-                #     cv2.FONT_HERSHEY_SIMPLEX,
-                #     0.7,
-                #     (0, 0, 255),
-                #     2,
-                # )
+                cv2.putText(
+                     frame,
+                     "Fatigue: {:.2f}".format(fatigue_prediction),
+                     (10, 60),
+                     cv2.FONT_HERSHEY_SIMPLEX,
+                     0.7,
+                     (0, 0, 255),
+                     2,
+                 )
 
                 # alert_result = self.alert_system.run(fatigue_prediction)
 
+            print_fps = [("FPS", fps, (300, 180), (0, 255, 0))]
+            self.print_features(frame, print_fps)
 
-            # Show frame
-            cv2.putText(
-                    frame,
-                    "FPS: {:.2f}".format(fps),
-                    (300, 180),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    (0, 255, 0),
-                    2,
-                )
             cv2.imshow("Fatigue Detector", frame)
 
             self.counter +=1

@@ -10,24 +10,27 @@ from math import floor
 from datetime import datetime
 import os, time
 
-# Save ear and mar values for each frame, to make some alalysis
-log_file = "./logs/{}.csv"
-SAVE_LOGS = False
 CATEGORY = 'train'
 PARAMS_TO_LOG = "log_all"
-PRINT_DOTS = True
-# bostezo, ojos_cerrados, ojos_abiertos, boca_abierta, hablando, bostezando
 
 class RealTime:
 
-    def __init__(self, camera: int = 0, calculate_fps: bool = False, print_landmarks: bool = True) -> None:
+    def __init__(self, camera: int = 0, print_landmarks: bool = True, save_logs: bool = False, log_file: str = LOG_FILE) -> None:
         """
         Initialize Real Time System
 
-        Args:
+        Parameters
+        ----------
+
             - camera (int, optional): Camera input. Defaults to 0.
-            - calculate_fps (bool, optional): Calculate FPS. Defaults to False
             - print_landmarks (bool, optional): Print the landmarks. Defaults to True.
+            - save_logs (bool, optional): Save logs. Defaults to False.
+            - log_file (str, optional): Log file. Defaults to "./logs/{}.csv".
+
+        Returns
+        -------
+
+            - None
         """
         makedirs(DIR_LOGS, exist_ok=True)
         self.facial_features_extraction = FacialFeaturesExtractionSystem()
@@ -35,20 +38,71 @@ class RealTime:
         self.alert_system = AlertSystem()
         self.camera = camera
         self.t0 = time.perf_counter()
-        self.counter = 0
-        self.calculate_fps = calculate_fps
         self.print_landmarks = print_landmarks
+        self.save_logs = save_logs
+        self.log_file = log_file
     
+    def set_fps(self, consecutive_frames_fps: float = CONSECUTIVE_FRAMES_FPS, file_fps: float = FILE_FPS) -> None:
+
+        """
+        Set FPS of the device
+
+        Parameters
+        ----------
+
+            - consecutive_frames_fps (float, optional): Consecutive frames. Defaults to CONSECUTIVE_FRAMES_FPS.
+            - file_fps (float, optional): File FPS. Defaults to FILE_FPS.
+
+        Returns
+        -------
+
+            - None
+        """
+
+        video_frame = cv2.VideoCapture(self.camera)
+
+        # Set cv2 optimized to true, if it is not
+        if not cv2.useOptimized():
+            try:
+                cv2.setUseOptimized(True)
+            except:
+                print(
+                    "OpenCV optimization could not be set to True, the script may be slower than expected")
+
+        counter = 0
+        # Run the 3 subsystems in cascade
+        while True:
+
+            # If there is not ret
+            ret, _ = video_frame.read()
+            if not ret:
+                break
+
+            #Calculate FPS
+            t_now = time.perf_counter()
+            fps = self.calc_fps(t_now, self.t0, counter)
+
+            if self.counter > consecutive_frames_fps:
+                with open(file_fps, 'w') as f:
+                    f.write(str(floor(fps)))
+                break
+
+            counter +=1
+
     def calc_fps(self, t_now: float, t0: float, n_frame: int) -> float:
         """
         Calculate FPS
 
-        Args:
+        Parameters
+        ----------
+
             - t_now (float): Current time
             - t0 (float): Initial time
             - n_frame (int): Number of frames
 
-        Returns:
+        Returns
+        -------
+
             - float: FPS
         """
         div = (t_now - t0)
@@ -58,7 +112,20 @@ class RealTime:
         else:
             return 0
 
-    def print_features(self, frame: list,features_to_print: list) -> None:
+    def print_features(self, frame: list, features_to_print: list) -> None:
+        """
+        Print features
+
+        Parameters
+        ----------
+
+            - frame (list): Frame
+            - features_to_print (list): Features to print
+
+        Returns
+        -------
+            - None
+        """
 
         for feature in features_to_print:
             cv2.putText(
@@ -71,7 +138,10 @@ class RealTime:
                     2,
             )
 
-    def run(self):
+    def run(self) -> None:
+        """
+        Run the real time system
+        """
 
         # Start video capture
         video_frame = cv2.VideoCapture(self.camera)
@@ -85,6 +155,7 @@ class RealTime:
                     "OpenCV optimization could not be set to True, the script may be slower than expected")
 
         # Run the 3 subsystems in cascade
+        counter = 0
         while True:
             
             # If there is not ret
@@ -107,77 +178,57 @@ class RealTime:
             #Calculate FPS
             t_now = time.perf_counter()
             fps = self.calc_fps(t_now, self.t0,self.counter)
+
+            fatigue_prediction = self.fatigue_detection_system.run(landmarks)
+            avg_ear = self.fatigue_detection_system.get_avg_ear()
+            avg_mar = self.fatigue_detection_system.get_avg_mar()
+            perclos = self.fatigue_detection_system.get_perclos()
+            pom = self.fatigue_detection_system.get_pom()
+            poy = self.fatigue_detection_system.get_poy()
+
+            features_to_print = [("EAR", avg_ear, (300, 30), (0, 255, 0)),("MAR", avg_mar, (300, 60), (0, 255, 0)),
+                                ("PERCLOS", perclos, (300, 90), (0, 255, 0)),("POM", pom, (300,120), (0, 255, 0)),
+                                ("POY", poy, (300,150), (0, 255, 0)),("Fatigue", fatigue_prediction, (10, 60), (0, 0, 255)),
+                                ("FPS", fps, (300, 180), (0, 255, 0))]
             
-            #Calculate constant FPS
-            if self.calculate_fps:
+            self.print_features(frame, features_to_print)
+            if self.save_logs and avg_ear != 0 and avg_mar != 0:
 
-                if self.counter > CONSECUTIVE_FRAMES_FPS:
-                    with open(FILE_FPS, 'w') as f:
-                        f.write(str(floor(fps)))
-                    break
-            else:
-
-                fatigue_prediction = self.fatigue_detection_system.run(landmarks)
-                avg_ear = self.fatigue_detection_system.get_avg_ear()
-                avg_mar = self.fatigue_detection_system.get_avg_mar()
-                perclos = self.fatigue_detection_system.get_perclos()
-                pom = self.fatigue_detection_system.get_pom()
-                poy = self.fatigue_detection_system.get_poy()
-
-                features_to_print = [("EAR", avg_ear, (300, 30), (0, 255, 0)),("MAR", avg_mar, (300, 60), (0, 255, 0)),
-                                     ("PERCLOS", perclos, (300, 90), (0, 255, 0)),("POM", pom, (300,120), (0, 255, 0)),("POY", poy, (300,150), (0, 255, 0))]
+                # Press "space" to save fatigue detected frame
+                if cv2.waitKey(1) & 0xFF == ord(" "):
+                    fatigue_prediction = 1
+                else:
+                    fatigue_prediction = 0
                 
-                self.print_features(frame, features_to_print)
-                # if SAVE_LOGS and avg_ear != 0 and avg_mar != 0:
+                timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
+                # COLS: timestamp;path_img;ear;mar
+                path_img = f"./frames/{CATEGORY}/"
 
-                #     # Press "space" to save fatigue detected frame
-                #     if cv2.waitKey(1) & 0xFF == ord(" "):
-                #         fatigue_prediction = 1
-                #     else:
-                #         fatigue_prediction = 0
-                    
-                #     timestamp = datetime.now().strftime("%Y%m%d%H%M%S%f")
-                #     # COLS: timestamp;path_img;ear;mar
-                #     path_img = f"./frames/{CATEGORY}/"
+                # mkdir
+                if not os.path.exists(path_img):
+                    os.makedirs(path_img)
 
-                #     # mkdir
-                #     if not os.path.exists(path_img):
-                #         os.makedirs(path_img)
+                full_path_img = "{}frame_{}.jpg".format(path_img, timestamp)
 
-                #     full_path_img = "{}frame_{}.jpg".format(path_img, timestamp)
+                # Save frame to disk
+                cv2.imwrite(
+                    full_path_img,
+                    frame,
+                )
 
-                #     # Save frame to disk
-                #     cv2.imwrite(
-                #         full_path_img,
-                #         frame,
-                #     )
+                # Save ear and mar values for each frame, to make some alalysis
+                with open(self.log_file.format(PARAMS_TO_LOG), "a+") as f:
 
-                #     # Save ear and mar values for each frame, to make some alalysis
-                #     with open(log_file.format(PARAMS_TO_LOG), "a+") as f:
+                    row_to_write = ";".join(map(str,[timestamp, full_path_img, avg_ear, avg_mar,list(*landmarks), fatigue_prediction])) 
+                    f.write(
+                    row_to_write + "\n"
+                    )
 
-                #         row_to_write = ";".join(map(str,[timestamp, full_path_img, avg_ear, avg_mar,list(*landmarks), fatigue_prediction])) 
-                #         f.write(
-                #            row_to_write + "\n"
-                #         )
-
-                cv2.putText(
-                     frame,
-                     "Fatigue: {:.2f}".format(fatigue_prediction),
-                     (10, 60),
-                     cv2.FONT_HERSHEY_SIMPLEX,
-                     0.7,
-                     (0, 0, 255),
-                     2,
-                 )
-
-                # alert_result = self.alert_system.run(fatigue_prediction)
-
-            print_fps = [("FPS", fps, (300, 180), (0, 255, 0))]
-            self.print_features(frame, print_fps)
+            # alert_result = self.alert_system.run(fatigue_prediction)
 
             cv2.imshow("Fatigue Detector", frame)
 
-            self.counter +=1
+            counter +=1
 
             # Press "q" to quit
             if cv2.waitKey(1) & 0xFF == ord("q"):

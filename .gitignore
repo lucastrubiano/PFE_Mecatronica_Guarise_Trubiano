@@ -270,3 +270,5 @@ OLD
 images/*.jpg
 images/*.png
 models/shape_predictor_68_face_landmarks.dat
+Python-3.10.13/
+*.tar.xz

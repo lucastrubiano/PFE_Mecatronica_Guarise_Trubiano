@@ -8,22 +8,32 @@ from config import (
     LEFT_IRIS_NUM,
     RIGHT_IRIS_NUM,
 )
-mp_drawing = mp.solutions.drawing_utils
-mp_drawing_styles = mp.solutions.drawing_styles
-mp_face_mesh = mp.solutions.face_mesh
+
 class FacialFeaturesExtractionSystem:
+
     def __init__(self) -> None:
         """
-        Initialize mediapipe's face detector and facial landmark predictor
+        Initialize Facial features extraction system which use mediapipe library
         """
-        self.detector = mp.solutions.face_mesh.FaceMesh(static_image_mode=False,
-                                               min_detection_confidence=0.5,
-                                               min_tracking_confidence=0.5,
-                                               refine_landmarks=True)
+        self.detector = mp.solutions.face_mesh.FaceMesh(
+                                                static_image_mode=False,
+                                                min_detection_confidence=0.5,
+                                                min_tracking_confidence=0.5,
+                                                refine_landmarks=True
+                                                )
 
-    def run(self, frame) -> list:
+    def run(self, frame: np.array) -> (list, tuple):
         """
         Run Facial Features Extraction Model
+
+        Parameters
+        ----------
+            - frame (np.array): Frame to be processed
+
+        Returns
+        --------
+            - list: List of landmarks
+            - frame_size: Size of the frame
         """
 
         processed_frame, frame_size = self.pre_processing(frame)
@@ -36,12 +46,15 @@ class FacialFeaturesExtractionSystem:
         """
         Get the main face from multiple faces detected
 
-        Args:
-            multiple_face_landmakrs (np.array): Multiple Face landmarks
+        Parameters
+        ----------
+            - multiple_face_landmakrs (np.array): Multiple Face landmarks
 
-        Returns:
-            np.array: Main Face landmarks
+        Returns
+        -------
+            - np.array: Main Face landmarks
         """
+
         surface = 0
         for face_lamdmarks in multiple_face_landmakrs:
             landmarks = [np.array([point.x, point.y, point.z]) \
@@ -57,14 +70,20 @@ class FacialFeaturesExtractionSystem:
         
         return main_face
 
-    def pre_processing(self, frame) -> None:
+    def pre_processing(self, frame:np.array) -> (np.array, tuple):
         """
-        Pre-processing frame
+        Pre-processing frame. First the frame is transform in grayscale and then filter.
+
+        Parameters
+        ----------
+            - frame (np.array): Frame to be processed
+
+        Returns
+        -------
+            - np.array: Processed frame
+            - tuple: frame size
+        
         """
-
-
-        # start the tick counter for computing the processing time for each frame
-        e1 = cv2.getTickCount()
 
         # transform the BGR frame in grayscale
         processed_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -80,8 +99,17 @@ class FacialFeaturesExtractionSystem:
 
     def face_detection(self, frame: np.array) -> np.array:
         """
-        Detect faces in frame
+        Detect faces in frame and return the main face
+        
+        Parameters
+        ----------
+            - frame (np.array): Frame to be processed
+
+        Returns
+        -------
+            - np.array: Main Face landmarks
         """
+
         # initialize landmarks vector
         mian_face = np.array([])
         # find the faces using the face mesh model
@@ -92,32 +120,32 @@ class FacialFeaturesExtractionSystem:
 
         return mian_face
     
-    def show_eye_keypoints(self, color_frame, landmarks, frame_size, numerate_dots = False, plot_iris = False ,plot_eyes = True, plot_inner_lips = True, plot_outter_lips = False):
+    def show_eye_keypoints(self, color_frame: np.array, landmarks: list, frame_size: tuple, numerate_dots: bool = False, plot_iris: bool = False ,plot_eyes: bool = True, plot_inner_lips:bool = True, plot_outter_lips:bool = False) -> None :
         """
         Shows eyes keypoints found in the face, drawing red circles in their position in the frame/image
 
         Parameters
         ----------
-        color_frame: numpy array
-            Frame/image in which the eyes keypoints are found
-        landmarks: landmarks: numpy array
-            List of 478 mediapipe keypoints of the face
+            - color_frame (np.array): Frame/image in which the eyes keypoints are found
+            - landmarks (list): List of landmarks
+            - frame_size (tuple): Size of the frame
+            - numerate_dots (bool): If True numerate the dots
+            - plot_iris (bool): If True plot iris
+            - plot_eyes (bool): If True plot eyes
+            - plot_inner_lips (bool): If True plot inner lips
+            - plot_outter_lips (bool): If True plot outter lips
+
+        Returns
+        -------
+            - None
         """
 
-        
         if landmarks.shape[0] != 0:
             if plot_iris:
                 cv2.circle(color_frame, (landmarks[LEFT_IRIS_NUM, :2] * frame_size).astype(np.uint32),
                     3, (255, 255, 255), cv2.FILLED)
                 cv2.circle(color_frame, (landmarks[RIGHT_IRIS_NUM, :2] * frame_size).astype(np.uint32),
                         3, (255, 255, 255), cv2.FILLED)
-            # mp_drawing.draw_landmarks(
-            # image=color_frame,
-            # landmark_list=landmarks[0],
-            # connections=mp_face_mesh.FACEMESH_LIPS,
-            # landmark_drawing_spec=None,
-            # connection_drawing_spec=mp_drawing_styles
-            # .get_default_face_mesh_tesselation_style())
             dots_to_plot = []
             if plot_eyes:
                 dots_to_plot.extend(EYES_LMS_NUMS)
@@ -139,4 +167,3 @@ class FacialFeaturesExtractionSystem:
                         (0, 255, 0),
                         1,
                     )
-        return

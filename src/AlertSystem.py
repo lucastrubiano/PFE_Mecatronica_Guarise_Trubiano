@@ -2,7 +2,6 @@ from time import time
 from config import CONSECUTIVE_FRAMES_THRESHOLD, TIME_THRESHOLD
 
 import threading
-import beepy
 
 class AlertSystem(threading.Thread):
     def __init__(self) -> None:
@@ -82,5 +81,4 @@ class AlertSystem(threading.Thread):
         if not self.playing_sound and self.last_t + 5 < time():
             self.last_t = time()
             self.playing_sound = True
-            beepy.beep(1)
             self.playing_sound = False

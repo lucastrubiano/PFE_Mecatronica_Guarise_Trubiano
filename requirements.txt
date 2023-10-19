@@ -2,7 +2,6 @@ opencv-python
 numpy
 python-dotenv
 # face_recognition
-dlib
 mediapipe
 
 scipy
@@ -10,6 +9,5 @@ imutils
 
 pandas
 matplotlib
-tensorflow
 
 beepy

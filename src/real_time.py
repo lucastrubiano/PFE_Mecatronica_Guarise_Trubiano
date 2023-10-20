@@ -177,7 +177,7 @@ class RealTime:
             
             #Calculate FPS
             t_now = time.perf_counter()
-            fps = self.calc_fps(t_now, self.t0,self.counter)
+            fps = self.calc_fps(t_now, self.t0, counter)
 
             fatigue_prediction = self.fatigue_detection_system.run(landmarks)
             avg_ear = self.fatigue_detection_system.get_avg_ear()

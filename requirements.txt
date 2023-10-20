@@ -9,5 +9,3 @@ imutils
 
 pandas
 matplotlib
-
-beepy

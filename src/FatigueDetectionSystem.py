@@ -29,6 +29,10 @@ class FatigueDetectionSystem:
         self.fatigue_prediction = 0
         self.yawn_state = False
         self.last_yawn = 0
+        self.ear_history = []
+        self.mar_history = []
+        self.yawn_history = []
+        
 
     @staticmethod
     def _calc_ear_eye(vertical_left_points: list, vertical_right_points: list, horizontal_poitns: list) -> float:
@@ -311,10 +315,10 @@ class FatigueDetectionSystem:
 
         self.avg_ear = self.eyes_features_extraction(landmarks)
         self.avg_mar = self.mouth_features_extraction(landmarks)
-        self.perclos, ear_history = self.calc_perclos(self.avg_ear, ear_history)
-        self.pom, mar_history = self.calc_pom(self.avg_mar, mar_history)
+        self.perclos, self.ear_history = self.calc_perclos(self.avg_ear, self.ear_history)
+        self.pom, self.mar_history = self.calc_pom(self.avg_mar, self.mar_history)
         self.yawn_state = self.is_yawn(self.pom)
-        self.poy, yawn_history = self.calc_poy(self.yawn_state, self.last_yawn, yawn_history)
+        self.poy, self.yawn_history = self.calc_poy(self.yawn_state, self.last_yawn, self.yawn_history)
         self.last_yawn = self.yawn_state
         fatigue_prediction = self.fatigue_predictor_model(self.perclos, self.poy)
 

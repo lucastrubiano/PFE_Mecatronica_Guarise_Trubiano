@@ -24,7 +24,7 @@ FILE_FPS = ".FPS"
 LANDMARKS_MODEL = "./models/shape_predictor_68_face_landmarks.dat"
 DIR_LOGS = "logs"
 MODEL_PATH = "./models/fatigue_detection_model.h5"
-LOG_FILE = "./logs/{}.csv"
+LOG_FILE = "./logs/{}"
 
 with open(FILE_FPS, 'r') as f:
     FPS = int(f.read())

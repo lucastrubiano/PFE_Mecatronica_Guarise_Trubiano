@@ -11,11 +11,12 @@ from datetime import datetime
 import os, time
 
 CATEGORY = 'train'
-PARAMS_TO_LOG = "log_all"
+PARAMS = "params"
+METRICS = "metrics"
 
 class RealTime:
 
-    def __init__(self, camera: int = 0, print_landmarks: bool = True, save_logs: bool = False, log_file: str = LOG_FILE) -> None:
+    def __init__(self, camera: int = 0, print_landmarks: bool = True, save_logs: bool = False, log_file: str = LOG_FILE, display_video: str = False) -> None:
         """
         Initialize Real Time System
 
@@ -41,6 +42,7 @@ class RealTime:
         self.print_landmarks = print_landmarks
         self.save_logs = save_logs
         self.log_file = log_file
+        self.display_video = display_video
     
     def set_fps(self, consecutive_frames_fps: float = CONSECUTIVE_FRAMES_FPS, file_fps: float = FILE_FPS) -> None:
 
@@ -187,12 +189,6 @@ class RealTime:
             pom = self.fatigue_detection_system.get_pom()
             poy = self.fatigue_detection_system.get_poy()
 
-            features_to_print = [("EAR", avg_ear, (300, 30), (0, 255, 0)),("MAR", avg_mar, (300, 60), (0, 255, 0)),
-                                ("PERCLOS", perclos, (300, 90), (0, 255, 0)),("POM", pom, (300,120), (0, 255, 0)),
-                                ("POY", poy, (300,150), (0, 255, 0)),("Fatigue", fatigue_prediction, (10, 60), (0, 0, 255)),
-                                ("FPS", fps, (300, 180), (0, 255, 0))]
-            
-            self.print_features(frame, features_to_print)
             if self.save_logs and avg_ear != 0 and avg_mar != 0:
 
                 # Press "space" to save fatigue detected frame
@@ -218,7 +214,7 @@ class RealTime:
                 )
 
                 # Save ear and mar values for each frame, to make some alalysis
-                with open(self.log_file.format(PARAMS_TO_LOG), "a+") as f:
+                with open(self.log_file.format(PARAMS), "a+") as f:
 
                     row_to_write = ";".join(map(str,[timestamp, full_path_img, avg_ear, avg_mar,list(*landmarks), fatigue_prediction])) 
                     f.write(
@@ -226,10 +222,26 @@ class RealTime:
                     )
 
             # alert_result = self.alert_system.run(fatigue_prediction)
-
-            cv2.imshow("Fatigue Detector", frame)
+            
+            if self.display_video:
+                features_to_print = [("EAR", avg_ear, (300, 30), (0, 255, 0)),("MAR", avg_mar, (300, 60), (0, 255, 0)),
+                                    ("PERCLOS", perclos, (300, 90), (0, 255, 0)),("POM", pom, (300,120), (0, 255, 0)),
+                                    ("POY", poy, (300,150), (0, 255, 0)),("Fatigue", fatigue_prediction, (10, 60), (0, 0, 255)),
+                                    ("FPS", fps, (300, 180), (0, 255, 0))]
+                
+                self.print_features(frame, features_to_print)
+                cv2.imshow("Fatigue Detector", frame)
 
             counter +=1
+
+            #Log metrics
+            with open(self.log_file.format(METRICS), "w+") as f:
+
+                for feature, value in zip(["EAR", "MAR", "PERCLOS", "POM", "POY", "Fatigue", "FPS"],[avg_ear, avg_mar, perclos, pom, poy, fatigue_prediction, fps]):
+                    row_to_write = feature + ": " + str(value)
+                    f.write(
+                    row_to_write + "\n"
+                    )
 
             # Press "q" to quit
             if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -237,7 +249,9 @@ class RealTime:
 
         # Release video capture and close all windows when exiting
         cv2.destroyAllWindows()
-        video_frame.release()
+        
+        if self.display_video:
+            video_frame.release()
 
 
 if __name__ == "__main__":

@@ -69,6 +69,7 @@ class RealTime:
                 print(
                     "OpenCV optimization could not be set to True, the script may be slower than expected")
         
+
         counter = 0
         # Run the 3 subsystems in cascade
         while True:
@@ -143,25 +144,25 @@ class RealTime:
         Run the real time system
         """
 
-        # # Start video capture
-        # video_frame = cv2.VideoCapture(self.camera)
+        # Start video capture
+        video_frame = cv2.VideoCapture(self.camera)
 
-        # # Set cv2 optimized to true, if it is not
-        # if not cv2.useOptimized():
-        #     try:
-        #         cv2.setUseOptimized(True)
-        #     except:
-        #         print(
-        #             "OpenCV optimization could not be set to True, the script may be slower than expected")
+        # Set cv2 optimized to true, if it is not
+        if not cv2.useOptimized():
+            try:
+                cv2.setUseOptimized(True)
+            except:
+                print(
+                    "OpenCV optimization could not be set to True, the script may be slower than expected")
 
-        frame = cv2.imread('./test_data/face.jpg')
         # Run the 3 subsystems in cascade
         counter = 0
         while True:
+            
             # If there is not ret
-            # ret, frame = video_frame.read()
-            # if not ret:
-            #     break
+            ret, frame = video_frame.read()
+            if not ret:
+                break
 
             # if the frame comes from webcam, flip it so it looks like a mirror.
             if self.camera == 0:
@@ -225,20 +226,18 @@ class RealTime:
                     )
 
             # alert_result = self.alert_system.run(fatigue_prediction)
-            # Save frame as a image
-            cv2.imwrite('./test_data/face_metrics.jpg', frame)
-            # cv2.imshow("Fatigue Detector", frame)
+
+            cv2.imshow("Fatigue Detector", frame)
 
             counter +=1
 
             # Press "q" to quit
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
-            break
 
         # Release video capture and close all windows when exiting
         cv2.destroyAllWindows()
-        # video_frame.release()
+        video_frame.release()
 
 
 if __name__ == "__main__":

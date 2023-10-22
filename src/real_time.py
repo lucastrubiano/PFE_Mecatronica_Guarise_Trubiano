@@ -226,7 +226,7 @@ class RealTime:
 
             # alert_result = self.alert_system.run(fatigue_prediction)
             # Save frame as a image
-            cv2.imwrite('./data/face_metrics.jpg', frame)
+            cv2.imwrite('./test_data/face_metrics.jpg', frame)
             # cv2.imshow("Fatigue Detector", frame)
 
             counter +=1

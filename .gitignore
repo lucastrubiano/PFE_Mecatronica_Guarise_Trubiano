@@ -227,7 +227,6 @@ pip-selfcheck.json
 *.tax2010
 *.vcf
 *.zip
-*.jpg
 data
 
 ### venv ###

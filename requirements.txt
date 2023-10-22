@@ -1,4 +1,5 @@
 opencv-python
+click
 numpy
 python-dotenv
 # face_recognition

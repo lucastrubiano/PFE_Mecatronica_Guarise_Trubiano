@@ -1,11 +1,11 @@
 import cv2
 
-from config import DIR_LOGS, LOG_FILE, CONSECUTIVE_FRAMES_FPS, FILE_FPS
+from config import DIR_LOGS, LOG_FILE
 from .FacialFeaturesExtractionSystem import FacialFeaturesExtractionSystem
 from .FatigueDetectionSystem import FatigueDetectionSystem
 from .AlertSystem import AlertSystem
 from os import makedirs
-from math import floor
+from .utils import calc_fps, print_features
 
 from datetime import datetime
 import os, time
@@ -14,11 +14,15 @@ CATEGORY = 'train'
 PARAMS = "params"
 METRICS = "metrics"
 
-class RealTime:
 
-    def __init__(self, camera: int = 0, print_landmarks: bool = True, save_logs: bool = False, log_file: str = LOG_FILE, display_video: str = False) -> None:
+class RealTime:
+    """
+    Class RealTime runs and orchastrates the 3 subsystems in cascade indor to detect fatigue in real time.
+    """
+
+    def __init__(self, camera: int = 0, print_landmarks: bool = True, save_logs: bool = False, display_video: str = False, log_file: str = LOG_FILE) -> None:
         """
-        Initialize Real Time System
+        Class RealTime constructor
 
         Parameters
         ----------
@@ -26,6 +30,7 @@ class RealTime:
             - camera (int, optional): Camera input. Defaults to 0.
             - print_landmarks (bool, optional): Print the landmarks. Defaults to True.
             - save_logs (bool, optional): Save logs. Defaults to False.
+            - display_video (str, optional): Display video. Defaults to False.
             - log_file (str, optional): Log file. Defaults to "./logs/{}.csv".
 
         Returns
@@ -33,6 +38,7 @@ class RealTime:
 
             - None
         """
+
         makedirs(DIR_LOGS, exist_ok=True)
         self.facial_features_extraction = FacialFeaturesExtractionSystem()
         self.fatigue_detection_system = FatigueDetectionSystem()
@@ -43,103 +49,6 @@ class RealTime:
         self.save_logs = save_logs
         self.log_file = log_file
         self.display_video = display_video
-    
-    def set_fps(self, consecutive_frames_fps: float = CONSECUTIVE_FRAMES_FPS, file_fps: float = FILE_FPS) -> None:
-
-        """
-        Set FPS of the device
-
-        Parameters
-        ----------
-
-            - consecutive_frames_fps (float, optional): Consecutive frames. Defaults to CONSECUTIVE_FRAMES_FPS.
-            - file_fps (float, optional): File FPS. Defaults to FILE_FPS.
-
-        Returns
-        -------
-
-            - None
-        """
-
-        video_frame = cv2.VideoCapture(self.camera)
-
-        # Set cv2 optimized to true, if it is not
-        if not cv2.useOptimized():
-            try:
-                cv2.setUseOptimized(True)
-            except:
-                print(
-                    "OpenCV optimization could not be set to True, the script may be slower than expected")
-        
-
-        counter = 0
-        # Run the 3 subsystems in cascade
-        while True:
-
-            # If there is not ret
-            ret, _ = video_frame.read()
-            if not ret:
-                break
-
-            #Calculate FPS
-            t_now = time.perf_counter()
-            fps = self.calc_fps(t_now, self.t0, counter)
-
-            if self.counter > consecutive_frames_fps:
-                with open(file_fps, 'w') as f:
-                    f.write(str(floor(fps)))
-                break
-
-            counter +=1
-
-    def calc_fps(self, t_now: float, t0: float, n_frame: int) -> float:
-        """
-        Calculate FPS
-
-        Parameters
-        ----------
-
-            - t_now (float): Current time
-            - t0 (float): Initial time
-            - n_frame (int): Number of frames
-
-        Returns
-        -------
-
-            - float: FPS
-        """
-        div = (t_now - t0)
-
-        if div > 0 :
-            return n_frame / div
-        else:
-            return 0
-
-    def print_features(self, frame: list, features_to_print: list) -> None:
-        """
-        Print features
-
-        Parameters
-        ----------
-
-            - frame (list): Frame
-            - features_to_print (list): Features to print
-
-        Returns
-        -------
-            - None
-        """
-
-        for feature in features_to_print:
-            cv2.putText(
-                    frame,
-                    "{}: {:.2f}".format(feature[0], feature[1]),
-                    feature[2],
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    feature[3],
-                    2,
-            )
 
     def run(self) -> None:
         """
@@ -180,7 +89,7 @@ class RealTime:
             
             #Calculate FPS
             t_now = time.perf_counter()
-            fps = self.calc_fps(t_now, self.t0, counter)
+            fps = calc_fps(t_now, self.t0, counter)
 
             fatigue_prediction = self.fatigue_detection_system.run(landmarks)
             avg_ear = self.fatigue_detection_system.get_avg_ear()
@@ -229,7 +138,7 @@ class RealTime:
                                     ("POY", poy, (300,150), (0, 255, 0)),("Fatigue", fatigue_prediction, (10, 60), (0, 0, 255)),
                                     ("FPS", fps, (300, 180), (0, 255, 0))]
                 
-                self.print_features(frame, features_to_print)
+                print_features(frame, features_to_print)
                 cv2.imshow("Fatigue Detector", frame)
 
             counter +=1

@@ -27,7 +27,7 @@ def main():
     """
 
 @main.command()
-def real_time() -> None:
+def real_time_system() -> None:
     """
     Run the real time system
     """

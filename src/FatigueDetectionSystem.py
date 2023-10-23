@@ -18,9 +18,13 @@ from config import(
     )
 
 class FatigueDetectionSystem:
+    """
+    This class contains all the methods needed to calculate the necessaries featurates to detect fatigue.
+    """
+    
     def __init__(self) -> None:
         """
-        Initialize Fatigue Detection System. This class contains all the methods needed to calculate the necessaries featurates to detect fatigue.
+        Initialize Fatigue Detection System.
         """
 
         self.avg_ear = 0
@@ -37,7 +41,7 @@ class FatigueDetectionSystem:
     @staticmethod
     def _calc_ear_eye(vertical_left_points: list, vertical_right_points: list, horizontal_poitns: list) -> float:
         """
-        Computer the EAR score for a single eyes given it's keypoints
+        Compute the EAR score for a single eyes given it's keypoints
 
         Parameters
         ----------
@@ -56,8 +60,9 @@ class FatigueDetectionSystem:
         ear = (A + B) / (2.0 * C)
 
         return ear
-
-    def _mouth_aspect_ratio(self, center_mouth_coord: list, border_mouth_coord: list) -> float:
+    
+    @staticmethod
+    def _mouth_aspect_ratio(center_mouth_coord: list, border_mouth_coord: list) -> float:
         """
         Mouth Aspect Ratio
 
@@ -216,7 +221,8 @@ class FatigueDetectionSystem:
         """
         return self.poy
     
-    def is_yawn(self, pom: float) -> bool:
+    @staticmethod
+    def is_yawn(pom: float) -> bool:
         """
         Update yawn history and return True if it is a yawn
 
@@ -250,7 +256,7 @@ class FatigueDetectionSystem:
 
         if len(yawn_history)>0:
             
-            if (self.frame - yawn_history[-1][1]) >= CONSECUTIVE_SEC_POY_THRESHOLD * FPS:
+            if (self.frame - yawn_history[0][1]) >= CONSECUTIVE_SEC_POY_THRESHOLD * FPS:
                 yawn_history.pop(0)
 
         poy = sum([i[0] for i in yawn_history])

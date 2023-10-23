@@ -10,6 +10,9 @@ from config import (
 )
 
 class FacialFeaturesExtractionSystem:
+    """
+    Class FacialFeaturesExtractionSystem is the class that runs the facial features extraction system.
+    """
 
     def __init__(self) -> None:
         """

@@ -11,14 +11,13 @@ The commands are the following:
 
 import sys
 import click
-import src.utils as utils
 # Load environment variables
 from dotenv import load_dotenv
 #from OLD import landmarks_model
 
 load_dotenv()
 
-from src import train, test, real_time, process_images
+from src import train, test, real_time, process_images, utils
 
 @click.group()
 def main():
@@ -27,11 +26,12 @@ def main():
     """
 
 @main.command()
-def real_time_system() -> None:
+@click.option("--display-video", is_flag=True, help="Display video")
+def real_time_system(display_video) -> None:
     """
     Run the real time system
     """
-    obj = real_time.RealTime()
+    obj = real_time.RealTime(display_video=display_video)
     obj.run()
 
 @main.command()

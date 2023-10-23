@@ -17,7 +17,7 @@ METRICS = "metrics"
 
 class RealTime:
     """
-    Class RealTime runs and orchastrates the 3 subsystems in cascade indor to detect fatigue in real time.
+    Class RealTime runs and orchastrates the 3 subsystems in cascade in order to detect fatigue in real time.
     """
 
     def __init__(self, camera: int = 0, print_landmarks: bool = True, save_logs: bool = False, display_video: str = False, log_file: str = LOG_FILE) -> None:

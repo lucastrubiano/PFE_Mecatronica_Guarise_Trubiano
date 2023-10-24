@@ -111,7 +111,7 @@ class FatigueDetectionSystem:
     
     def calc_perclos(self, ear: float, ear_history: list, ear_threshold: float = EAR_THRESHOLD, sec_perclos: float = CONSECUTIVE_SEC_PERCLOS_THRESHOLD, fps: float = FPS) -> (float, list):
         """
-        Calculate the PERCLOS which is the eye's closure duration/ percentage of eye closure.
+        Calculate the `PERCLOS` which is the eye's closure duration/ percentage of eye closure.
         It is to say the duration of the closure of the eyes in a given duration.
 
         Parameters

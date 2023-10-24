@@ -27,11 +27,17 @@ def main():
 
 @main.command()
 @click.option("--display-video", is_flag=True, help="Display video")
-def real_time_system(display_video) -> None:
+@click.option("--head-pose", is_flag=True, help="Head pose")
+def real_time_system(display_video: bool, head_pose: bool) -> None:
     """
     Run the real time system
+
+    Parameters
+    ----------
+        - display_video (bool, optional): Display video. Defaults to False.
+        - head_pose (bool, optional): Head pose. Defaults to False.
     """
-    obj = real_time.RealTime(display_video=display_video)
+    obj = real_time.RealTime(display_video=display_video, head_pose=head_pose)
     obj.run()
 
 @main.command()

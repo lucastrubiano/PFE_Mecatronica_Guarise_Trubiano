@@ -6,6 +6,7 @@ from .FatigueDetectionSystem import FatigueDetectionSystem
 from .AlertSystem import AlertSystem
 from os import makedirs
 from .utils import calc_fps, print_features
+from .Pose_Estimation_Module import HeadPoseEstimator
 
 from datetime import datetime
 import os, time
@@ -20,7 +21,7 @@ class RealTime:
     Class RealTime runs and orchastrates the 3 subsystems in cascade in order to detect fatigue in real time.
     """
 
-    def __init__(self, camera: int = 0, print_landmarks: bool = True, save_logs: bool = False, display_video: str = False, log_file: str = LOG_FILE) -> None:
+    def __init__(self, camera: int = 0, print_landmarks: bool = True, save_logs: bool = False, display_video: bool = False, head_pose: bool =False, log_file: str = LOG_FILE) -> None:
         """
         Class RealTime constructor
 
@@ -31,6 +32,7 @@ class RealTime:
             - print_landmarks (bool, optional): Print the landmarks. Defaults to True.
             - save_logs (bool, optional): Save logs. Defaults to False.
             - display_video (str, optional): Display video. Defaults to False.
+            - head_pose (bool, optional): Head pose. Defaults to False.
             - log_file (str, optional): Log file. Defaults to "./logs/{}.csv".
 
         Returns
@@ -49,6 +51,7 @@ class RealTime:
         self.save_logs = save_logs
         self.log_file = log_file
         self.display_video = display_video
+        self.head_pose = head_pose
 
     def run(self) -> None:
         """
@@ -97,7 +100,11 @@ class RealTime:
             perclos = self.fatigue_detection_system.get_perclos()
             pom = self.fatigue_detection_system.get_pom()
             poy = self.fatigue_detection_system.get_poy()
+            Head_pose = HeadPoseEstimator(show_axis=self.head_pose)
 
+            # compute the head pose
+            frame, roll, pitch, yaw = Head_pose.get_pose(
+                frame=frame, landmarks=landmarks, frame_size=frame_size)
             if self.save_logs and avg_ear != 0 and avg_mar != 0:
 
                 # Press "space" to save fatigue detected frame

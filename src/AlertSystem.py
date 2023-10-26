@@ -1,7 +1,11 @@
-from time import time
-from config import CONSECUTIVE_FRAMES_THRESHOLD, TIME_THRESHOLD
+from __future__ import annotations
 
 import threading
+from time import time
+
+from config import CONSECUTIVE_FRAMES_THRESHOLD
+from config import TIME_THRESHOLD
+
 
 class AlertSystem(threading.Thread):
     def __init__(self) -> None:

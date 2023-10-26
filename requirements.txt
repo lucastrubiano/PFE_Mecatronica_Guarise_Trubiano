@@ -1,12 +1,12 @@
-opencv-python
 click
-numpy
-python-dotenv
+imutils
+matplotlib
 # face_recognition
 mediapipe
-
-scipy
-imutils
+numpy
+opencv-python
 
 pandas
-matplotlib
+python-dotenv
+
+scipy

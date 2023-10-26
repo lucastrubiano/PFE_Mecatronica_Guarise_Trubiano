@@ -1,4 +1,4 @@
-$ python find_facial_features_in_picture.py 
+$ python find_facial_features_in_picture.py
 I found 1 face(s) in this photograph.
 The chin in this face has the following points: [(149, 233), (145, 265), (146, 299), (149, 332), (153, 365), (162, 398), (177, 427), (194, 451), (225, 461), (263, 460), (300, 445), (337, 426), (368, 401), (389, 369)]
 The left_eyebrow in this face has the following points: [(151, 215), (162, 196), (184, 192), (206, 195), (228, 203)]

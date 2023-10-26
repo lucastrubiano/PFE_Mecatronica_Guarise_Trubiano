@@ -1,8 +1,14 @@
-import cv2
+from __future__ import annotations
+
 import time
-from config import CONSECUTIVE_FRAMES_FPS, FILE_FPS
 from math import floor
+
+import cv2
 import numpy as np
+
+from config import CONSECUTIVE_FRAMES_FPS
+from config import FILE_FPS
+
 
 def print_features(frame: list, features_to_print: list) -> None:
     """
@@ -21,17 +27,19 @@ def print_features(frame: list, features_to_print: list) -> None:
 
     for feature in features_to_print:
         cv2.putText(
-                frame,
-                "{}: {:.2f}".format(feature[0], feature[1]),
-                feature[2],
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.7,
-                feature[3],
-                2,
+            frame,
+            f'{feature[0]}: {feature[1]}' if type(
+                feature[1],
+            ) == str else f'{feature[0]}: {feature[1]:.2f}',
+            feature[2],
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            feature[3],
+            2,
         )
 
-def set_fps(camera: int = 0, consecutive_frames_fps: float = CONSECUTIVE_FRAMES_FPS, file_fps: float = FILE_FPS) -> None:
 
+def set_fps(camera: int = 0, consecutive_frames_fps: float = CONSECUTIVE_FRAMES_FPS, file_fps: str = FILE_FPS) -> None:
     """
     Set FPS of the device
 
@@ -56,8 +64,8 @@ def set_fps(camera: int = 0, consecutive_frames_fps: float = CONSECUTIVE_FRAMES_
             cv2.setUseOptimized(True)
         except:
             print(
-                "OpenCV optimization could not be set to True, the script may be slower than expected")
-    
+                'OpenCV optimization could not be set to True, the script may be slower than expected',
+            )
 
     counter = 0
     # Run the 3 subsystems in cascade
@@ -68,7 +76,7 @@ def set_fps(camera: int = 0, consecutive_frames_fps: float = CONSECUTIVE_FRAMES_
         if not ret:
             break
 
-        #Calculate FPS
+        # Calculate FPS
         t_now = time.perf_counter()
         fps = calc_fps(t_now, t0, counter)
 
@@ -77,7 +85,8 @@ def set_fps(camera: int = 0, consecutive_frames_fps: float = CONSECUTIVE_FRAMES_
                 f.write(str(floor(fps)))
             break
 
-        counter +=1
+        counter += 1
+
 
 @staticmethod
 def calc_fps(t_now: float, t0: float, n_frame: int) -> float:
@@ -98,10 +107,11 @@ def calc_fps(t_now: float, t0: float, n_frame: int) -> float:
     """
     div = (t_now - t0)
 
-    if div > 0 :
+    if div > 0:
         return n_frame / div
     else:
         return 0
+
 
 def isRotationMatrix(R, precision=1e-4):
     """
@@ -117,6 +127,7 @@ def isRotationMatrix(R, precision=1e-4):
     I = np.identity(3, dtype=R.dtype)
     n = np.linalg.norm(I - shouldBeIdentity)
     return n < precision
+
 
 def rotationMatrixToEulerAngles(R, precision=1e-4):
     '''
@@ -169,18 +180,33 @@ def draw_pose_info(frame, img_point, point_proj, roll=None, pitch=None, yaw=None
     :return: frame: opencv image/frame
         Frame with 3d axis drawn and, optionally, the roll,pitch and yaw values drawn
     """
-    frame = cv2.line(frame, img_point, tuple(
-        point_proj[0].ravel().astype(int)), (255, 0, 0), 3)
-    frame = cv2.line(frame, img_point, tuple(
-        point_proj[1].ravel().astype(int)), (0, 255, 0), 3)
-    frame = cv2.line(frame, img_point, tuple(
-        point_proj[2].ravel().astype(int)), (0, 0, 255), 3)
+    frame = cv2.line(
+        frame, img_point, tuple(
+            point_proj[0].ravel().astype(int),
+        ), (255, 0, 0), 3,
+    )
+    frame = cv2.line(
+        frame, img_point, tuple(
+            point_proj[1].ravel().astype(int),
+        ), (0, 255, 0), 3,
+    )
+    frame = cv2.line(
+        frame, img_point, tuple(
+            point_proj[2].ravel().astype(int),
+        ), (0, 0, 255), 3,
+    )
     if roll is not None and pitch is not None and yaw is not None:
-        cv2.putText(frame, "Roll:" + str(round(roll, 0)), (500, 50),
-                    cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
-        cv2.putText(frame, "Pitch:" + str(round(pitch, 0)), (500, 70),
-                    cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
-        cv2.putText(frame, "Yaw:" + str(round(yaw, 0)), (500, 90),
-                    cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.putText(
+            frame, 'Roll:' + str(round(roll, 0)), (500, 50),
+            cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA,
+        )
+        cv2.putText(
+            frame, 'Pitch:' + str(round(pitch, 0)), (500, 70),
+            cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA,
+        )
+        cv2.putText(
+            frame, 'Yaw:' + str(round(yaw, 0)), (500, 90),
+            cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, cv2.LINE_AA,
+        )
 
     return frame

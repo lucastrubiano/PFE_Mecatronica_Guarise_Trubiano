@@ -1,12 +1,13 @@
 click
 imutils
 matplotlib
-# face_recognition
+
 mediapipe
 numpy
 opencv-python
 
 pandas
 python-dotenv
+RPi.GPIO
 
 scipy

@@ -93,6 +93,9 @@ class RealTime:
                 frame,
             )
 
+            if landmarks is None:
+                continue
+
             # Print landmarks
             if self.print_landmarks:
                 self.facial_features_extraction.show_eye_keypoints(
@@ -103,9 +106,10 @@ class RealTime:
             t_now = time.perf_counter()
             fps = calc_fps(t_now, self.t0, counter)
 
-            fatigue_prediction = self.fatigue_detection_system.run(
+            state_prediction = self.fatigue_detection_system.run(
                 landmarks, pitch, yaw,
             )
+            alert_result = self.alert_system.run(fatigue_prediction)
             avg_ear = self.fatigue_detection_system.get_avg_ear()
             avg_mar = self.fatigue_detection_system.get_avg_mar()
             perclos = self.fatigue_detection_system.get_perclos()
@@ -153,18 +157,14 @@ class RealTime:
                         row_to_write + '\n',
                     )
 
-            # alert_result = self.alert_system.run(fatigue_prediction)
-
             if self.display_video and len(frame) and roll:
                 features_to_print = [
-                    (
-                        'EAR', avg_ear, (400, 30), (0, 255, 0),
-                    ), ('MAR', avg_mar, (400, 60), (0, 255, 0)),
-                    (
-                        'PERCLOS', perclos, (400, 90), (0, 255, 0),
-                    ), ('POM', pom, (400, 120), (0, 255, 0)),
+                    ('EAR', avg_ear, (400, 30), (0, 255, 0)),
+                    ('MAR', avg_mar, (400, 60), (0, 255, 0)),
+                    ('PERCLOS', perclos, (400, 90), (0, 255, 0)),
+                    ('POM', pom, (400, 120), (0, 255, 0)),
                     ('POY', poy, (400, 150), (0, 255, 0)),
-                    ('Fatigue', fatigue_prediction, (10, 60), (0, 0, 255)),
+                    ('State', state_prediction, (10, 60), (0, 0, 255)),
                     ('FPS', fps, (400, 180), (0, 255, 0)),
                     ('ROLL', roll, (400, 270), (0, 255, 0)),
                     ('PITCH', pitch, (400, 210), (0, 255, 0)),
@@ -180,7 +180,16 @@ class RealTime:
             # Log metrics
             with open(self.log_file.format(METRICS), 'w+') as f:
 
-                for feature, value in zip(['EAR', 'MAR', 'PERCLOS', 'POM', 'POY', 'Fatigue', 'FPS', 'ROLL', 'PITCH', 'YAW'], [avg_ear, avg_mar, perclos, pom, poy, fatigue_prediction, fps, roll, pitch, yaw]):
+                for feature, value in zip(
+                    [
+                        'EAR', 'MAR', 'PERCLOS', 'POM', 'POY',
+                        'STATE', 'FPS', 'ROLL', 'PITCH', 'YAW',
+                    ],
+                    [
+                        avg_ear, avg_mar, perclos, pom, poy,
+                        state_prediction, fps, roll, pitch, yaw,
+                    ],
+                ):
                     row_to_write = feature + ': ' + str(value)
                     f.write(
                         row_to_write + '\n',

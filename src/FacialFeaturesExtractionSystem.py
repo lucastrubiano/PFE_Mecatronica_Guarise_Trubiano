@@ -50,11 +50,14 @@ class FacialFeaturesExtractionSystem:
 
         landmarks = self.face_detection(processed_frame)
 
-        frame, roll, pitch, yaw = self.Head_pose.get_pose(
-            frame=frame, landmarks=landmarks, frame_size=frame_size,
-        )
+        if landmarks.shape[0] != 0:
+            frame, roll, pitch, yaw = self.Head_pose.get_pose(
+                frame=frame, landmarks=landmarks, frame_size=frame_size,
+            )
 
-        return landmarks, frame_size, roll, pitch, yaw
+            return landmarks, frame_size, roll, pitch, yaw
+
+        return None, None, None, None, None
 
     def _get_main_face(self, multiple_face_landmakrs: np.array) -> np.array:
         """

@@ -11,20 +11,22 @@ from config import CONSECUTIVE_SEC_PERCLOS_THRESHOLD
 from config import CONSECUTIVE_SEC_POM_THRESHOLD
 from config import CONSECUTIVE_SEC_POY_THRESHOLD
 from config import CONSECUTIVE_SEC_YAW_THRESHOLD
-from config import DISTRACTED_STATE
-from config import EAR_THRESHOLD
-from config import FATIGUE_STATE
 from config import FPS
 from config import LEFT_EYE_LMS_NUMS
-from config import MAR_THRESHOLD
-from config import NORMAL_STATE
 from config import RIGHT_EYE_LMS_NUMS
+from config import STATE_DISTRACTED
+from config import STATE_FATIGUE
+from config import STATE_NORMAL
+from config import THRESHOLD_EAR
+from config import THRESHOLD_MAR
 from config import THRESHOLD_PERCLOS
 from config import THRESHOLD_PERCLOS_PITCH
 from config import THRESHOLD_PERCLOS_POY
+from config import THRESHOLD_PITCH
+from config import THRESHOLD_POM
 from config import THRESHOLD_POY
 from config import THRESHOLD_YAW
-from config import THRESHOLD_YAWN
+from config import THRESHOLD_YAWPER
 
 
 class FatigueDetectionSystem:
@@ -43,9 +45,10 @@ class FatigueDetectionSystem:
         self.fatigue_prediction = 0
         self.yawn_state = False
         self.last_yawn = 0
+        self.yamper = 0
         self.ear_history = 0
         self.yaw_history = 0
-        self.mar_history = []
+        self.mar_history = 0
         self.yawn_history = []
 
     @staticmethod
@@ -125,7 +128,10 @@ class FatigueDetectionSystem:
         else:
             return 0
 
-    def calc_perclos(self, ear: float, ear_history: int, yaw: float, yaw_threshold: float = THRESHOLD_YAW, ear_threshold: float = EAR_THRESHOLD, sec_perclos: float = CONSECUTIVE_SEC_PERCLOS_THRESHOLD, fps: float = FPS) -> (float, list):
+    def calc_perclos(
+        self, ear: float, ear_history: int, yaw: float, yaw_threshold: float = THRESHOLD_YAW,
+        ear_threshold: float = THRESHOLD_EAR, sec_perclos: float = CONSECUTIVE_SEC_PERCLOS_THRESHOLD, fps: float = FPS,
+    ) -> (float, list):
         """
         Calculate the `PERCLOS` which is the eye's closure duration/ percentage of eye closure.
         It is to say the duration of the closure of the eyes in a given duration.
@@ -146,7 +152,7 @@ class FatigueDetectionSystem:
             - int: History of eyes states
         """
 
-        if ear < ear_threshold and abs(yaw) < yaw_threshold:
+        if ear < ear_threshold and ear_history < (sec_perclos * fps):
             # If the ear is less than EAR_THRESHOLD then it is considered that the eye is closed
             ear_history += 1
         else:
@@ -154,9 +160,14 @@ class FatigueDetectionSystem:
 
         perclos = ear_history / (sec_perclos * fps)
 
+        perclos = perclos if perclos < 1 else 1
+
         return perclos, ear_history
 
-    def calc_yawper(self, yaw: float, yaw_history: int, yaw_threshold: float = THRESHOLD_YAW, sec_yamper: float = CONSECUTIVE_SEC_YAW_THRESHOLD, fps: float = FPS) -> (float, int):
+    def calc_yawper(
+        self, yaw: float, yaw_history: int, yaw_threshold: float = THRESHOLD_YAW,
+        sec_yamper: float = CONSECUTIVE_SEC_YAW_THRESHOLD, fps: float = FPS,
+    ) -> (float, int):
         """
         Calculate the `YAWPER` which is the yaw more than a given threshold duration/ percentage of yaw.
 
@@ -174,23 +185,28 @@ class FatigueDetectionSystem:
             - int: History of yaw states
         """
 
-        if abs(yaw) > yaw_threshold:
+        if abs(yaw) > yaw_threshold and yaw_history < (sec_yamper * fps):
             yaw_history += 1
         else:
             yaw_history = yaw_history - 1 if yaw_history > 0 else 0
 
         yamper = yaw_history / (sec_yamper * fps)
 
+        yamper = yamper if yamper < 1 else 1
+
         return yamper, yaw_history
 
-    def calc_pom(self, mar: float, mar_history: list, mar_threshold: list = MAR_THRESHOLD, sec_pom: float = CONSECUTIVE_SEC_POM_THRESHOLD, fps: float = FPS) -> (float, list):
+    def calc_pom(
+        self, mar: float, mar_history: int, mar_threshold: float = THRESHOLD_MAR,
+        sec_pom: float = CONSECUTIVE_SEC_POM_THRESHOLD, fps: float = FPS,
+    ) -> (float, int):
         """
         Calculate the POM which is the mouth's opening duration/ percentage of mouth opening.
 
         Parameters
         ----------
             - mar (float): Mouth Aspect Ratio
-            - mar_history (list): List of mouth states (0: closed, 1: open)
+            - mar_history (int): Mouth history
             - mar_threshold (float): Mouth Aspect Ratio threshold
             - sec_pom (float): POM duration in seconds
             - fps (float): Frames per second
@@ -198,21 +214,18 @@ class FatigueDetectionSystem:
         Returns
         --------
             - float: POM
-            - list: List of mouth states (0: closed, 1: open)
+            - int: Mouth history
         """
 
-        mouth_state = 0
-        pom = 0
         if mar > mar_threshold:
             # If the mar is more than MAR_THRESHOLD then it is considered that the mouth is opened
-            mouth_state = 1
-        mar_history.append(mouth_state)
+            mar_history += 1
+        else:
+            mar_history = mar_history - 1 if mar_history > 0 else 0
 
-        if self.frame >= sec_pom * fps:
-            # POM is the duration of the opening of the mouth. In our list of mar_history we storage the opening of the mouth
-            # during a determinated amount of frames wich represents the durations of 1 minute
-            pom = np.mean(mar_history)
-            mar_history.pop(0)
+        pom = mar_history / (sec_pom * fps)
+
+        pom = pom if pom < 1 else 1
 
         return pom, mar_history
 
@@ -281,12 +294,15 @@ class FatigueDetectionSystem:
         --------
             - bool: If it is a yawn, True is returned
         """
-        if pom > THRESHOLD_YAWN:
+        if pom > THRESHOLD_POM:
             return True
         else:
             return False
 
-    def calc_poy(self, yawn_state: float, last_yawn: float, yawn_history: list) -> (float, list):
+    def calc_poy(
+        self, yawn_state: float, last_yawn: float, yawn_history: list,
+        sec_pom: float = CONSECUTIVE_SEC_POY_THRESHOLD, fps: float = FPS,
+    ) -> (float, int):
         """
         Calculate the POY which is the number of yawn during a given time
 
@@ -295,6 +311,8 @@ class FatigueDetectionSystem:
             - yawn_state (float): The current yawn state
             - last_yawn (float): The last yawn state
             - yawn_history (list): List of yawn states (0: not yawn, 1: yawn)
+            - sec_pom (float): POY duration in seconds
+            - fps (float): Frames per second
 
         Returns
         --------
@@ -307,7 +325,7 @@ class FatigueDetectionSystem:
 
         if len(yawn_history) > 0:
 
-            if (self.frame - yawn_history[0][1]) >= CONSECUTIVE_SEC_POY_THRESHOLD * FPS:
+            if (self.frame - yawn_history[0][1]) >= (sec_pom * fps):
                 yawn_history.pop(0)
 
         poy = sum([i[0] for i in yawn_history])
@@ -315,24 +333,32 @@ class FatigueDetectionSystem:
         last_yawn = yawn_state
         return poy, yawn_history, last_yawn
 
-    def mouth_features_extraction(self, landmarks: list) -> float:
+    def mouth_features_extraction(
+        self, landmarks: list,
+        center_mouth: list = CENTER_MOUTH_LMS_NUMS, border_mouth: list = BORDER_MOUTH_LMS_NUMS,
+    ) -> float:
         """
         Open Mouth Model
 
         Parameters
         ----------
             - landmarks (list): List of landmarks
+            - center_mouth (list): Center mouth landmarks
+            - border_mouth (list): Border mouth landmarks
 
         Returns
         --------
             - float: Mouth Aspect Ratio
         """
-        if landmarks.shape[0]:
-            return self._mouth_aspect_ratio(landmarks[CENTER_MOUTH_LMS_NUMS], landmarks[BORDER_MOUTH_LMS_NUMS])
+        if landmarks.shape[0] != 0:
+            return self._mouth_aspect_ratio(landmarks[center_mouth], landmarks[border_mouth])
         else:
             return 0
 
-    def state_predictor_model(self, perclos: float, poy: float, pitch: float, yawper: float) -> str:
+    def state_predictor_model(
+            self, perclos: float, poy: float, pitch: float, yawper: float,
+            threshold_poy: int = THRESHOLD_POY, threshold_perclos_poy: float = THRESHOLD_PERCLOS_POY,
+            threshold_picth: int = THRESHOLD_PITCH, threshold_perclos_pitch: float = THRESHOLD_PERCLOS_PITCH, threshold_yamper: float = THRESHOLD_YAWPER, ) -> str:
         """
         Fatigue Predictor Model
 
@@ -340,38 +366,48 @@ class FatigueDetectionSystem:
         ----------
             - perclos (float): PERCLOS
             - poy (float): POY
+            - pitch (float): Pitch
+            - yawper (float): YAMPER
+            - threshold_poy (int): POY threshold
+            - threshold_perclos_poy (float): PERCLOS threshold after pass POY threshold
+            - threshold_picth (int): Pitch threshold
+            - threshold_perclos_pitch (float): PERCLOS threshold after pass Pitch threshold
+            - threshold_yamper (float): YAMPER threshold
 
         Returns
         --------
-            - int: Fatigue prediction
+            - str: Fatigue prediction
         """
+        pitch = pitch if pitch else 0
 
-        if poy >= THRESHOLD_POY:
-            perclos_threshold = THRESHOLD_PERCLOS_POY
+        if poy >= threshold_poy:
+            perclos_threshold = threshold_perclos_poy
 
-        elif abs(pitch) >= THRESHOLD_PERCLOS_PITCH:
-            perclos_threshold = THRESHOLD_PERCLOS_PITCH
+        elif abs(pitch) >= threshold_picth:
+            perclos_threshold = threshold_perclos_pitch
         else:
             perclos_threshold = THRESHOLD_PERCLOS
 
         if perclos > perclos_threshold:
-            return FATIGUE_STATE
-        elif yawper > THRESHOLD_YAW:
-            return DISTRACTED_STATE
+            return STATE_FATIGUE
+        elif yawper > threshold_yamper:
+            return STATE_DISTRACTED
 
-        return NORMAL_STATE
+        return STATE_NORMAL
 
-    def run(self, landmarks: list, pitch: float, yaw: float) -> None:
+    def run(self, landmarks: list, pitch: float, yaw: float) -> str:
         """
-        Run Fatigue Detection System
+        Run Fatigue Detection System. Return the state prediction
 
         Parameters
         ----------
             - landmarks (list): List of landmarks
+            - pitch (float): Pitch
+            - yaw (float): Yaw
 
         Returns
         --------
-            - None
+            - str: State prediction
         """
 
         # Calculate time difference between frames
@@ -389,11 +425,12 @@ class FatigueDetectionSystem:
         self.poy, self.yawn_history, self.last_yawn = self.calc_poy(
             yawn_state, self.last_yawn, self.yawn_history,
         )
-        self.yawper, self.yaw_history = self.calc_yawper(
-            yaw, self.yaw_history,
-        )
-        fatigue_prediction = self.state_predictor_model(
-            self.perclos, self.poy, pitch, yaw,
+        if yaw:
+            self.yawper, self.yaw_history = self.calc_yawper(
+                yaw, self.yaw_history,
+            )
+        state_prediction = self.state_predictor_model(
+            self.perclos, self.poy, pitch, self.yawper,
         )
 
-        return fatigue_prediction
+        return state_prediction

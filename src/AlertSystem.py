@@ -3,40 +3,43 @@ from __future__ import annotations
 import threading
 from time import time
 
+import RPi.GPIO as GPIO
+
 from config import CONSECUTIVE_FRAMES_THRESHOLD
-from config import TIME_THRESHOLD
+from config import CONSECUTIVE_SEC_ALERT_THRESHOLD
+from config import FPS
+from config import LED_FATIGUE
+from config import STATE_DISTRACTED
+from config import STATE_FATIGUE
+from config import STATE_NORMAL
+from config import THRESHOLD_EAR
+from config import THRESHOLD_TIME
 
 
-class AlertSystem(threading.Thread):
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(LED_FATIGUE, GPIO.OUT)
+
+
+class AlertSystem():
     def __init__(self) -> None:
         """
         Initialize Alert System
         """
-        threading.Thread.__init__(self)
 
         # initialize run time
-        self.t = 0
         self.last_t = time()
 
-        # initialize counter
-        # self.consecutive_frames = 0
-
-        # last 10 fatigue predictions
-        # self.fatigue_prediction = []
-
-        # alert state
-        self.alert_state = False
-
-        self.playing_sound = False
-
-    def run(self, fatigue_prediction) -> None:
+    def run(self, state_prediction: str) -> None:
         """
         Run Alert System
         """
 
-        if fatigue_prediction > 0.8:
+        if state_prediction == STATE_FATIGUE:
             # make a beep sound in parallel
-            self.alert()
+            led_thread = threading.Thread(
+                target=self.alert, args=(LED_FATIGUE),
+            )
+            led_thread.start()
             alert = 1
 
         else:
@@ -71,18 +74,20 @@ class AlertSystem(threading.Thread):
 
         alert_result = False
 
-        if t > TIME_THRESHOLD and consecutive_frames >= CONSECUTIVE_FRAMES_THRESHOLD:
+        if t > THRESHOLD_TIME and consecutive_frames >= CONSECUTIVE_FRAMES_THRESHOLD:
             alert_result = True
 
         return alert_result
 
-    def alert(self) -> None:
+    def alert(self, led_pin: str, buzzer: bool = True) -> None:
         """
         Alert. Turn on buzzer and led light in raspberry pi.
         Possible in a future will be implemented a sms or email alert.
         """
 
-        if not self.playing_sound and self.last_t + 5 < time():
-            self.last_t = time()
-            self.playing_sound = True
-            self.playing_sound = False
+        try:
+            if (self.last_t - time()) > CONSECUTIVE_SEC_ALERT_THRESHOLD:
+                GPIO.output(led_pin, GPIO.HIGH)
+        except KeyboardInterrupt:
+            # If you press Ctrl+C, this block will clean up the GPIO settings
+            GPIO.cleanup()

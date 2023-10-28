@@ -217,7 +217,7 @@ class FatigueDetectionSystem:
             - int: Mouth history
         """
 
-        if mar > mar_threshold:
+        if mar > mar_threshold and mar_history < (sec_pom * fps):
             # If the mar is more than MAR_THRESHOLD then it is considered that the mouth is opened
             mar_history += 1
         else:

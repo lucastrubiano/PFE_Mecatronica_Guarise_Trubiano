@@ -8,16 +8,25 @@ import RPi.GPIO as GPIO
 from config import CONSECUTIVE_FRAMES_THRESHOLD
 from config import CONSECUTIVE_SEC_ALERT_THRESHOLD
 from config import FPS
-from config import LED_FATIGUE
+from config import PIN_FATIGUE
+from config import PIN_BUSSER
+from config import PIN_DISTRACTED
 from config import STATE_DISTRACTED
 from config import STATE_FATIGUE
 from config import STATE_NORMAL
 from config import THRESHOLD_EAR
 from config import THRESHOLD_TIME
+from config import PIN_STATUS_LOW
+from config import PIN_STATUS_HIGH
+
 
 
 GPIO.setmode(GPIO.BCM)
-GPIO.setup(LED_FATIGUE, GPIO.OUT)
+GPIO.setwarnings(False)
+GPIO.setup(PIN_FATIGUE, GPIO.OUT)
+GPIO.setup(PIN_BUSSER, GPIO.OUT)
+GPIO.setup(PIN_DISTRACTED, GPIO.OUT)
+
 
 
 class AlertSystem():
@@ -26,7 +35,7 @@ class AlertSystem():
         Initialize Alert System
         """
 
-        # initialize run time
+        GPIO.output(PIN_FATIGUE, GPIO.LOW)
         self.last_t = time()
 
     def run(self, state_prediction: str) -> None:
@@ -34,18 +43,8 @@ class AlertSystem():
         Run Alert System
         """
 
-        if state_prediction == STATE_FATIGUE:
-            # make a beep sound in parallel
-            led_thread = threading.Thread(
-                target=self.alert, args=(LED_FATIGUE),
-            )
-            led_thread.start()
-            alert = 1
+        self.alert(state_prediction)
 
-        else:
-            alert = 0
-
-        return alert
 
     def __update_consecutive_frames(self, fatigue_prediction) -> None:
         """
@@ -78,16 +77,41 @@ class AlertSystem():
             alert_result = True
 
         return alert_result
+    
+    def turn_on_off_device(self, led_pin, status):
 
-    def alert(self, led_pin: str, buzzer: bool = True) -> None:
+        try:
+            if status == PIN_STATUS_HIGH:
+                GPIO.output(led_pin, GPIO.HIGH)
+            elif status == PIN_STATUS_LOW:
+                GPIO.output(led_pin, GPIO.LOW)
+            else:
+                GPIO.output(led_pin, GPIO.LOW)
+        except KeyboardInterrupt:
+            # If you press Ctrl+C, this block will clean up the GPIO settings
+            GPIO.output(led_pin, GPIO.LOW)
+            GPIO.cleanup()
+
+    def alert(self, state_prediction: str) -> None:
         """
         Alert. Turn on buzzer and led light in raspberry pi.
         Possible in a future will be implemented a sms or email alert.
         """
 
-        try:
-            if (self.last_t - time()) > CONSECUTIVE_SEC_ALERT_THRESHOLD:
-                GPIO.output(led_pin, GPIO.HIGH)
-        except KeyboardInterrupt:
-            # If you press Ctrl+C, this block will clean up the GPIO settings
-            GPIO.cleanup()
+        if state_prediction == STATE_FATIGUE:
+            self.last_t = time()
+            self.turn_on_off_device(PIN_FATIGUE, PIN_STATUS_HIGH)
+            self.turn_on_off_device(PIN_BUSSER, PIN_STATUS_HIGH)
+
+        if state_prediction == STATE_DISTRACTED:
+            self.last_t = time()
+            self.turn_on_off_device(PIN_DISTRACTED, PIN_STATUS_HIGH)
+
+        if state_prediction != STATE_FATIGUE:
+            if (time() - self.last_t) > CONSECUTIVE_SEC_ALERT_THRESHOLD:
+                self.turn_on_off_device(PIN_FATIGUE, PIN_STATUS_LOW)
+                self.turn_on_off_device(PIN_BUSSER, PIN_STATUS_LOW)
+        
+        if state_prediction != STATE_DISTRACTED:
+            if (time() - self.last_t) > CONSECUTIVE_SEC_ALERT_THRESHOLD:
+                self.turn_on_off_device(PIN_DISTRACTED, PIN_STATUS_LOW)

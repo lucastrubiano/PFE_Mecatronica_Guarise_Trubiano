@@ -109,7 +109,7 @@ class RealTime:
             state_prediction = self.fatigue_detection_system.run(
                 landmarks, pitch, yaw,
             )
-            alert_result = self.alert_system.run(fatigue_prediction)
+            alert_result = self.alert_system.run(state_prediction)
             avg_ear = self.fatigue_detection_system.get_avg_ear()
             avg_mar = self.fatigue_detection_system.get_avg_mar()
             perclos = self.fatigue_detection_system.get_perclos()
@@ -183,11 +183,11 @@ class RealTime:
                 for feature, value in zip(
                     [
                         'EAR', 'MAR', 'PERCLOS', 'POM', 'POY',
-                        'STATE', 'FPS', 'ROLL', 'PITCH', 'YAW',
+                        'STATE', 'FPS', 'ROLL', 'PITCH', 'YAW', 'YAWPER'
                     ],
                     [
                         avg_ear, avg_mar, perclos, pom, poy,
-                        state_prediction, fps, roll, pitch, yaw,
+                        state_prediction, fps, roll, pitch, yaw, yawper,
                     ],
                 ):
                     row_to_write = feature + ': ' + str(value)

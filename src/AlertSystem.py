@@ -36,7 +36,8 @@ class AlertSystem():
         """
 
         GPIO.output(PIN_FATIGUE, GPIO.LOW)
-        self.last_t = time()
+        self.t_fatigue = time()
+        self.t_distracted = time()
 
     def run(self, state_prediction: str) -> None:
         """
@@ -99,19 +100,19 @@ class AlertSystem():
         """
 
         if state_prediction == STATE_FATIGUE:
-            self.last_t = time()
+            self.t_fatigue = time()
             self.turn_on_off_device(PIN_FATIGUE, PIN_STATUS_HIGH)
             self.turn_on_off_device(PIN_BUSSER, PIN_STATUS_HIGH)
 
         if state_prediction == STATE_DISTRACTED:
-            self.last_t = time()
+            self.t_distracted = time()
             self.turn_on_off_device(PIN_DISTRACTED, PIN_STATUS_HIGH)
 
         if state_prediction != STATE_FATIGUE:
-            if (time() - self.last_t) > CONSECUTIVE_SEC_ALERT_THRESHOLD:
+            if (time() - self.t_fatigue) > CONSECUTIVE_SEC_ALERT_THRESHOLD:
                 self.turn_on_off_device(PIN_FATIGUE, PIN_STATUS_LOW)
                 self.turn_on_off_device(PIN_BUSSER, PIN_STATUS_LOW)
         
         if state_prediction != STATE_DISTRACTED:
-            if (time() - self.last_t) > CONSECUTIVE_SEC_ALERT_THRESHOLD:
+            if (time() - self.t_distracted) > CONSECUTIVE_SEC_ALERT_THRESHOLD:
                 self.turn_on_off_device(PIN_DISTRACTED, PIN_STATUS_LOW)

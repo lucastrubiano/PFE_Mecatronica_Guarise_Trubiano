@@ -109,7 +109,7 @@ class RealTime:
             state_prediction = self.fatigue_detection_system.run(
                 landmarks, pitch, yaw,
             )
-            alert_result = self.alert_system.run(state_prediction)
+            self.alert_system.run(state_prediction)
             avg_ear = self.fatigue_detection_system.get_avg_ear()
             avg_mar = self.fatigue_detection_system.get_avg_mar()
             perclos = self.fatigue_detection_system.get_perclos()
@@ -126,7 +126,7 @@ class RealTime:
                     fatigue_prediction = 0
 
                 timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
-                # COLS: timestamp;path_img;ear;mar
+                COLS: timestamp;path_img;ear;mar
                 path_img = f'./frames/{CATEGORY}/'
 
                 # mkdir
@@ -147,9 +147,8 @@ class RealTime:
                     row_to_write = ';'.join(
                         map(
                             str, [
-                                timestamp, full_path_img, avg_ear, avg_mar, list(
-                                    *landmarks,
-                                ), fatigue_prediction,
+                                timestamp, full_path_img, avg_ear, avg_mar, state_prediction,
+                                perclos, pom, poy, yawper
                             ],
                         ),
                     )

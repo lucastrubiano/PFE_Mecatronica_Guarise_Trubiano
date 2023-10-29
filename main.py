@@ -31,7 +31,8 @@ def main():
 @main.command()
 @click.option('--display-video', is_flag=True, help='Display video')
 @click.option('--head-pose', is_flag=True, help='Head pose')
-def real_time_system(display_video: bool, head_pose: bool) -> None:
+@click.option('--logs', is_flag=True, help='Log metrics')
+def real_time_system(display_video: bool, head_pose: bool, logs: bool) -> None:
     """
     Run the real time system
 
@@ -40,7 +41,8 @@ def real_time_system(display_video: bool, head_pose: bool) -> None:
         - display_video (bool, optional): Display video. Defaults to False.
         - head_pose (bool, optional): Head pose. Defaults to False.
     """
-    obj = real_time.RealTime(display_video=display_video, head_pose=head_pose)
+    obj = real_time.RealTime(display_video=display_video,
+                             head_pose=head_pose, save_logs=logs)
     obj.run()
 
 

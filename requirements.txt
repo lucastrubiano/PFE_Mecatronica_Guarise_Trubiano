@@ -1,14 +1,13 @@
-opencv-python
-numpy
-python-dotenv
-# face_recognition
-dlib
-
-scipy
+click
 imutils
+matplotlib
+
+mediapipe
+numpy
+opencv-python
 
 pandas
-matplotlib
-tensorflow
+python-dotenv
+RPi.GPIO
 
-beepy
+scipy

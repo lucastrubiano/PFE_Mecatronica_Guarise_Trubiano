@@ -1,14 +1,17 @@
 """
 Detect a face in webcam video and check if mouth is open.
 """
-import face_recognition
+from __future__ import annotations
+
 import cv2
-from mouth_open_algorithm import get_lip_height, get_mouth_height
+import face_recognition
+from mouth_open_algorithm import get_lip_height
+from mouth_open_algorithm import get_mouth_height
 
 
 def is_mouth_open(face_landmarks):
-    top_lip = face_landmarks["top_lip"]
-    bottom_lip = face_landmarks["bottom_lip"]
+    top_lip = face_landmarks['top_lip']
+    bottom_lip = face_landmarks['bottom_lip']
 
     top_lip_height = get_lip_height(top_lip)
     bottom_lip_height = get_lip_height(bottom_lip)
@@ -33,7 +36,9 @@ while True:
     ret, frame = video_capture.read()
 
     # Find all the faces and face enqcodings in the frame of video
-    face_locations = face_recognition.face_locations(frame, number_of_times_to_upsample=0)
+    face_locations = face_recognition.face_locations(
+        frame, number_of_times_to_upsample=0,
+    )
 
     if face_locations:
         top, right, bottom, left = face_locations[0]
@@ -45,15 +50,15 @@ while True:
 
         # Loop through each face in this frame of video
         for (top, right, bottom, left), face_landmarks in zip(
-            face_locations, face_landmarks_list
+            face_locations, face_landmarks_list,
         ):
             # Draw a box around the face
             # cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
 
             # Display text for mouth open
             # if is_mouth_open(face_landmarks):
-                # text = 'Mouth is open'
-                # print("Mouth is open")
+            # text = 'Mouth is open'
+            # print("Mouth is open")
 
             # cv2.putText(frame, text, (left, top - 50), cv2.FONT_HERSHEY_DUPLEX, 1.0, (255, 255, 255), 1)
 
@@ -65,12 +70,12 @@ while True:
                     cv2.circle(frame, point, 2, (255, 255, 0), -1)
 
     # Display the resulting image
-    cv2.imshow("Video", frame)
+    cv2.imshow('Video', frame)
     # cv2.imshow("Video", frame[top:bottom, left:right])
     # cv2.moveWindow("Video",1000-left,top)
 
     # Hit 'q' on the keyboard to quit!
-    if cv2.waitKey(1) & 0xFF == ord("q"):
+    if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 # Release handle to the webcam

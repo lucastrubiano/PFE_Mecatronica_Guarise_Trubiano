@@ -227,7 +227,6 @@ pip-selfcheck.json
 *.tax2010
 *.vcf
 *.zip
-*.jpg
 data
 
 ### venv ###
@@ -269,4 +268,7 @@ OLD
 
 images/*.jpg
 images/*.png
+frames/*
 models/shape_predictor_68_face_landmarks.dat
+Python-3.10.13/
+*.tar.xz

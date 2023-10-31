@@ -8,13 +8,13 @@ from os import makedirs
 
 import cv2
 
-from .AlertSystem import AlertSystem
 from .FacialFeaturesExtractionSystem import FacialFeaturesExtractionSystem
 from .FatigueDetectionSystem import FatigueDetectionSystem
 from .utils import calc_fps
 from .utils import print_features
 from config import DIR_LOGS
 from config import LOG_FILE
+# from .AlertSystem import AlertSystem
 
 CATEGORY = 'train'
 PARAMS = 'params'
@@ -51,7 +51,7 @@ class RealTime:
             head_pose,
         )
         self.fatigue_detection_system = FatigueDetectionSystem()
-        self.alert_system = AlertSystem()
+        # self.alert_system = AlertSystem()
         self.camera = camera
         self.t0 = time.perf_counter()
         self.print_landmarks = print_landmarks
@@ -110,7 +110,7 @@ class RealTime:
             state_prediction = self.fatigue_detection_system.run(
                 landmarks, pitch, yaw,
             )
-            self.alert_system.run(state_prediction)
+            # self.alert_system.run(state_prediction)
             avg_ear = self.fatigue_detection_system.get_avg_ear()
             avg_mar = self.fatigue_detection_system.get_avg_mar()
             perclos = self.fatigue_detection_system.get_perclos()
@@ -149,7 +149,7 @@ class RealTime:
                         map(
                             str, [
                                 timestamp, full_path_img, avg_ear, avg_mar, state_prediction,
-                                perclos, pom, poy, yawper
+                                perclos, pom, poy, yawper,
                             ],
                         ),
                     )
@@ -183,7 +183,7 @@ class RealTime:
                 for feature, value in zip(
                     [
                         'EAR', 'MAR', 'PERCLOS', 'POM', 'POY',
-                        'STATE', 'FPS', 'ROLL', 'PITCH', 'YAW', 'YAWPER'
+                        'STATE', 'FPS', 'ROLL', 'PITCH', 'YAW', 'YAWPER',
                     ],
                     [
                         avg_ear, avg_mar, perclos, pom, poy,

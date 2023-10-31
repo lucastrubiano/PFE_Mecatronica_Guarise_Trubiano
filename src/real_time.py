@@ -1,3 +1,4 @@
+#!/home/admin/Documents/PFE_RT/myenv/bin/python
 from __future__ import annotations
 
 import os
@@ -17,7 +18,7 @@ from config import LOG_FILE
 
 CATEGORY = 'train'
 PARAMS = 'params'
-METRICS = 'metrics'
+METRICS = 'metrics' 
 
 
 class RealTime:
@@ -126,7 +127,7 @@ class RealTime:
                     fatigue_prediction = 0
 
                 timestamp = datetime.now().strftime('%Y%m%d%H%M%S%f')
-                COLS: timestamp;path_img;ear;mar
+                #COLS: timestamp;path_img;ear;mar
                 path_img = f'./frames/{CATEGORY}/'
 
                 # mkdir

@@ -110,7 +110,7 @@ class RealTime:
             state_prediction = self.fatigue_detection_system.run(
                 landmarks, pitch, yaw,
             )
-            # self.alert_system.run(state_prediction)
+            self.alert_system.run(state_prediction)
             avg_ear = self.fatigue_detection_system.get_avg_ear()
             avg_mar = self.fatigue_detection_system.get_avg_mar()
             perclos = self.fatigue_detection_system.get_perclos()

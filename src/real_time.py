@@ -14,7 +14,7 @@ from .utils import calc_fps
 from .utils import print_features
 from config import DIR_LOGS
 from config import LOG_FILE
-# from .AlertSystem import AlertSystem
+from .AlertSystem import AlertSystem
 
 CATEGORY = 'train'
 PARAMS = 'params'
@@ -51,7 +51,7 @@ class RealTime:
             head_pose,
         )
         self.fatigue_detection_system = FatigueDetectionSystem()
-        # self.alert_system = AlertSystem()
+        self.alert_system = AlertSystem()
         self.camera = camera
         self.t0 = time.perf_counter()
         self.print_landmarks = print_landmarks
